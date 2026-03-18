@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>⚔️ 수학 대전</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:root{--pri:#5C7CFA;--suc:#37B24D;--dan:#F03E3E;--war:#F59F00;--boss:#9C36B5;--r:16px}
+html,body{height:100%;font-family:'Noto Sans KR','Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);color:#333;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px}
+.card{background:rgba(255,255,255,.97);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:100%;max-width:500px;text-align:center;max-height:96vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.card::-webkit-scrollbar{width:4px}.card::-webkit-scrollbar-thumb{background:#ced4da;border-radius:2px}
+h1{font-size:2em;background:linear-gradient(135deg,var(--pri),#D6336C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:1.4em;color:#495057;margin-bottom:8px}
+.sub{color:#868e96;font-size:.85em;margin-bottom:12px}
+.divider{width:60px;height:3px;background:linear-gradient(90deg,var(--pri),#D6336C);border-radius:2px;margin:10px auto}
+.btn{display:inline-block;padding:12px 24px;font-size:1em;font-weight:700;border:none;border-radius:14px;cursor:pointer;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.13);transition:transform .1s}
+.btn:active{transform:scale(.95)}.btn:disabled{opacity:.35;pointer-events:none}
+.btn-pri{background:var(--pri)}.btn-suc{background:var(--suc)}.btn-dan{background:var(--dan)}.btn-war{background:var(--war)}.btn-gray{background:#868e96}.btn-boss{background:var(--boss)}
+.btn-lg{padding:14px 32px;font-size:1.15em}.btn-sm{padding:8px 14px;font-size:.82em;border-radius:10px}
+.btn-outline{background:transparent;border:2px solid #dee2e6;color:#495057;box-shadow:none}
+input[type=text],input[type=password]{width:100%;padding:12px;font-size:1.1em;border:2.5px solid #dee2e6;border-radius:12px;text-align:center;font-weight:600;outline:none}
+input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(92,124,250,.18)}
+.room-code{font-size:2.8em;font-weight:900;letter-spacing:8px;color:var(--pri);margin:8px 0;font-family:monospace}
+.status{display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82em;font-weight:600}
+.status-wait{background:#FFF3BF;color:#E67700}.status-ok{background:#D3F9D8;color:#2B8A3E}.status-err{background:#FFE3E3;color:#C92A2A}
+/* Character Grid */
+.char-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0;max-height:280px;overflow-y:auto;padding:4px}
+.char-cell{padding:6px 2px;border-radius:10px;cursor:pointer;border:2.5px solid transparent;transition:all .12s;text-align:center;background:#f8f9fa}
+.char-cell:active{transform:scale(.92)}
+.char-cell.selected{border-color:var(--pri);background:rgba(92,124,250,.1);box-shadow:0 2px 8px rgba(92,124,250,.25)}
+.char-cell.disabled{opacity:.25;pointer-events:none}
+.char-cell .em{font-size:1.6em;line-height:1.2}.char-cell .nm{font-size:.52em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Mode Cards */
+.mode-card{padding:14px;border-radius:14px;margin:8px 0;cursor:pointer;border:3px solid #dee2e6;transition:all .15s;text-align:left}
+.mode-card:active{transform:scale(.98)}
+.mode-card.sel{border-color:var(--pri);background:rgba(92,124,250,.06);box-shadow:0 2px 10px rgba(92,124,250,.2)}
+.mode-card .mode-title{font-size:1.05em;font-weight:800}.mode-card .mode-desc{font-size:.78em;color:#868e96;margin-top:2px}
+/* Ops */
+.ops-row{display:flex;gap:6px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.op-btn{padding:8px 18px;font-size:1.3em;font-weight:700;border:2.5px solid #dee2e6;border-radius:10px;cursor:pointer;background:#f8f9fa;transition:all .12s}
+.op-btn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+/* Player Slot */
+.player-slot{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;margin:6px 0;text-align:left}
+.player-slot .big-em{font-size:2.2em}.player-slot .info{flex:1}.player-slot .pnm{font-weight:700;font-size:1em}.player-slot .pch{font-size:.8em;color:#868e96}
+.ready-badge{padding:3px 10px;border-radius:20px;font-size:.75em;font-weight:700}
+/* Battle */
+.battle-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.battle-side{text-align:center;flex:1}.battle-side .em{font-size:2em;position:relative;display:inline-block}
+.battle-vs{font-size:1em;font-weight:900;color:#ced4da}
+.hearts{display:flex;gap:1px;justify-content:center;margin:2px 0}.hearts span{font-size:1em;transition:all .3s}.hearts span.lost{filter:grayscale(1) opacity(.25);transform:scale(.7)}
+.problem-box{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:14px;padding:14px;margin:6px 0;color:#fff}
+.problem-box .tt{font-size:.8em;opacity:.75}.problem-box .pt{font-size:2em;font-weight:900;letter-spacing:3px}
+.timer-bar{width:100%;height:7px;background:#e9ecef;border-radius:4px;overflow:hidden;margin:4px 0}
+.timer-fill{height:100%;border-radius:4px;transition:width .4s,background .3s}
+.input-disp{width:100%;max-width:260px;height:44px;margin:6px auto;background:#fff;border:2.5px solid var(--pri);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6em;font-weight:700;letter-spacing:3px}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:260px;margin:6px auto}
+.numpad button{padding:12px 0;font-size:1.2em;font-weight:700;border:none;border-radius:10px;cursor:pointer;background:#f1f3f5;color:#333;box-shadow:0 2px 4px rgba(0,0,0,.08);transition:transform .07s}
+.numpad button:active{transform:scale(.91)}.numpad .key-ok{background:var(--suc);color:#fff}.numpad .key-del{background:var(--dan);color:#fff}
+.items-row{display:flex;gap:5px;justify-content:center;margin:6px 0;min-height:32px;align-items:center;flex-wrap:wrap}
+.item-btn{font-size:1.1em;padding:3px 8px;border:2px solid #dee2e6;border-radius:8px;background:#fff;cursor:pointer;transition:transform .08s}
+.item-btn:active{transform:scale(.88)}
+.msg-box{padding:6px 10px;border-radius:10px;font-weight:700;font-size:.85em;margin:4px 0;min-height:28px}
+.streak-badge{display:inline-block;padding:2px 8px;border-radius:16px;font-size:.7em;font-weight:700;background:#FFF3BF;color:#E67700}
+.frozen-ov{position:absolute;inset:0;background:rgba(100,200,255,.45);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3em;font-weight:900;color:#0077B6;z-index:5}
+.shield-i{position:absolute;top:-4px;right:-6px;font-size:.7em}.double-i{position:absolute;top:-4px;left:-6px;font-size:.7em}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#fff;border-radius:20px;padding:24px;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal h3{font-size:1.3em;margin-bottom:8px}.modal p{font-size:.9em;color:#495057;margin-bottom:16px}
+/* Boss */
+.boss-hp-bar{width:100%;height:14px;background:#e9ecef;border-radius:7px;overflow:hidden;margin:6px 0}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,#F03E3E,#9C36B5);border-radius:7px;transition:width .4s}
+.boss-emoji{font-size:3.5em;display:inline-block;animation:bossFloat 2s ease-in-out infinite}
+@keyframes bossFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+/* Result */
+.result-pts{font-size:2.2em;font-weight:900;color:var(--pri)}
+.score-row{display:flex;justify-content:center;gap:28px;margin:12px 0}
+.score-col{text-align:center}.score-col .val{font-size:1.8em;font-weight:900}.score-col .lbl{font-size:.75em;color:#868e96}
+.countdown-num{font-size:7em;font-weight:900;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.3);animation:popIn .45s ease}
+@keyframes popIn{0%{transform:scale(2.2);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.flex-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}
+.gap-sm{gap:4px}
+@media(max-width:380px){.char-grid{grid-template-columns:repeat(4,1fr)}.char-cell .em{font-size:1.3em}.problem-box .pt{font-size:1.6em}.btn{padding:10px 18px;font-size:.92em}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Surrender Modal (injected dynamically) -->
+<div id="modal-root"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// ⚔️ 수학 대전 v3.0
+// 로그인 · 3가지 모드 · 멀티플레이어 · 패배인정
+// ══════════════════════════════════════════════════
+
+// ═══ 40 CHARACTERS ═══
+const CHARS=[
+["🦁","사자왕","#E8590C"],["🐯","번개호랑이","#E67700"],["🐻","파워곰","#7048E8"],["🐼","판다전사","#1098AD"],
+["🦊","천재여우","#D6336C"],["🐰","스피드토끼","#37B24D"],["🐺","은빛늑대","#495057"],["🦅","하늘독수리","#4263EB"],
+["🐢","철벽거북","#0CA678"],["🦈","바다상어","#1C7ED6"],["🐬","돌고래킹","#22B8CF"],["🐙","팔다리문어","#E64980"],
+["🦋","무지개나비","#BE4BDB"],["🐝","꿀벌파이터","#F59F00"],["🦉","지혜올빼미","#862E9C"],["🐧","꼬마펭귄","#343A40"],
+["🦜","컬러앵무","#E03131"],["🐸","점프개구리","#2F9E44"],["🐵","장난원숭이","#D9480F"],["🦖","공룡대장","#5F3DC4"],
+["🐲","불꽃용","#C92A2A"],["🦄","유니콘스타","#F06595"],["🐨","졸린코알라","#868E96"],["🦩","핑크새","#F783AC"],
+["🐮","힘센황소","#AE3EC9"],["🐱","닌자고양이","#4C6EF5"],["🐶","멍멍전사","#D6336C"],["🐹","똘똘햄스터","#FF922B"],
+["🦝","도둑너구리","#495057"],["🦦","물놀이수달","#1098AD"],["🦥","느림보보스","#74B816"],["🦡","터프오소리","#5C5F66"],
+["🐊","턱센악어","#2B8A3E"],["🦚","화려공작","#0C8599"],["🐫","사막낙타","#E8590C"],["🐳","거대고래","#1971C2"],
+["🦀","집게꽃게","#F03E3E"],["🐷","복실돼지","#F06595"],["🦒","키다리기린","#F59F00"],["🐘","뚝심코끼리","#868E96"]
+].map(([emoji,name,color],i)=>({id:i,emoji,name,color}));
+
+const ITEMS=[
+{id:"shield",emoji:"🛡️",name:"방어막",desc:"공격 1회 방어"},
+{id:"double",emoji:"⚡",name:"더블어택",desc:"2배 데미지"},
+{id:"freeze",emoji:"❄️",name:"프리즈",desc:"상대 3초 정지"}
+];
+
+// ═══ GAME MODES ═══
+const MODES={
+  speed:{name:"⚡ 스피드 모드",desc:"30초 안에 더 많이 맞히면 승리! 빠른 판단력이 핵심",icon:"⚡",color:"#F59F00",timeTotal:30},
+  survival:{name:"🛡️ 서바이벌 모드",desc:"HP를 깎아 상대를 쓰러뜨려라! 전략적 아이템 활용",icon:"🛡️",color:"#37B24D"},
+  boss:{name:"🐉 보스 대전 모드",desc:"2명이 협력해서 보스를 물리쳐라! 함께 문제를 풀어 보스 HP를 깎자",icon:"🐉",color:"#9C36B5"}
+};
+
+const BOSSES=[
+  {name:"불꽃 드래곤",emoji:"🐉",hp:20,color:"#C92A2A"},
+  {name:"얼음 골렘",emoji:"🧊",hp:25,color:"#1C7ED6"},
+  {name:"어둠 마왕",emoji:"👿",hp:30,color:"#5F3DC4"},
+];
+
+const MAX_HP=5, TIME_PER_Q=20, ITEM_STREAK=3, SURRENDER_PENALTY=0.5;
+
+// ═══ STATE ═══
+let S={
+  screen:'login', // login|home|create|join|lobby|countdown|battle|result
+  // Auth
+  userId:'', userPw:'', nick:'', loggedIn:false,
+  // Room
+  roomCode:'', isHost:false, mode:'survival',
+  // Connection
+  peer:null, conn:null, connected:false, connErr:'',
+  // Players
+  me:{char:null,hp:MAX_HP,score:0,streak:0,input:'',items:[],shield:false,frozen:false,frozenUntil:0,doubleNext:false,ready:false},
+  opp:{char:null,hp:MAX_HP,score:0,streak:0,shield:false,frozen:false,frozenUntil:0,doubleNext:false,ready:false,nick:''},
+  // Game
+  ops:['+'],problem:null,timer:TIME_PER_Q,round:0,difficulty:0,msg:'',msgType:'',gameActive:false,countdownNum:5,
+  // Speed mode
+  speedTimer:30, speedMyScore:0, speedOppScore:0,
+  // Boss mode
+  boss:null, bossHp:0, bossMaxHp:0, bossMyDmg:0, bossOppDmg:0,
+  // Result
+  winner:null, ptsEarned:0,
+  // Modal
+  showSurrenderModal:false,
+  surrendered:false
+};
+
+let timerInt=null, frozenInt=null, cdInt=null, speedInt=null;
+
+// ═══ AUDIO ═══
+let _ac=null;
+function ac(){if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)();return _ac}
+function beep(f,d,t='sine'){try{const c=ac(),o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;g.gain.value=.1;g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d)}catch(e){}}
+function sndOk(){beep(880,.1);setTimeout(()=>beep(1100,.13),70)}
+function sndNo(){beep(200,.2,'sawtooth')}
+function sndAtk(){beep(400,.07);setTimeout(()=>beep(600,.1),50)}
+function sndWin(){[0,100,200,300].forEach((d,i)=>setTimeout(()=>beep(523+i*130,.15),d))}
+function sndItem(){beep(1200,.07);setTimeout(()=>beep(1500,.07),50)}
+function sndCd(){beep(660,.08)}
+function sndGo(){beep(880,.12);setTimeout(()=>beep(1100,.12),80);setTimeout(()=>beep(1320,.16),160)}
+function sndBoss(){beep(220,.3,'sawtooth');setTimeout(()=>beep(180,.3,'sawtooth'),200)}
+
+// ═══ POINTS ═══
+function loadUser(){try{const d=JSON.parse(localStorage.getItem('mb_users')||'{}');return d}catch(e){return{}}}
+function saveUser(users){try{localStorage.setItem('mb_users',JSON.stringify(users))}catch(e){}}
+function getUserPts(){const u=loadUser();return (u[S.userId]&&u[S.userId].pts)||0}
+function addUserPts(p){const u=loadUser();if(!u[S.userId])u[S.userId]={pw:S.userPw,nick:S.nick,pts:0};u[S.userId].pts=Math.max(0,(u[S.userId].pts||0)+p);saveUser(u);return u[S.userId].pts}
+function getRanking(){const u=loadUser();return Object.entries(u).map(([id,d])=>({id,nick:d.nick||id,pts:d.pts||0})).sort((a,b)=>b.pts-a.pts).slice(0,10)}
+
+// ═══ PROBLEM ═══
+function genProblem(ops,diff=0){
+  const op=ops[Math.floor(Math.random()*ops.length)];
+  let a,b,ans,d=Math.min(diff,5);
+  if(op==='+'){const mx=50+d*25;a=10+Math.floor(Math.random()*mx);b=10+Math.floor(Math.random()*mx);ans=a+b}
+  else if(op==='−'){const mx=50+d*25;a=20+Math.floor(Math.random()*mx);b=1+Math.floor(Math.random()*Math.min(a-1,mx));ans=a-b}
+  else if(op==='×'){a=2+Math.floor(Math.random()*(7+d));b=2+Math.floor(Math.random()*(7+d));ans=a*b}
+  else{ans=2+Math.floor(Math.random()*(7+d));b=2+Math.floor(Math.random()*(7+d));a=ans*b}
+  return{text:`${a} ${op} ${b}`,ans}
+}
+
+// ═══ ROOM CODE ═══
+function makeCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ';let r='';for(let i=0;i<4;i++)r+=c[Math.floor(Math.random()*c.length)];return r}
+
+// ═══ NETWORKING ═══
+function send(d){if(S.conn&&S.conn.open)S.conn.send(JSON.stringify(d))}
+
+function createRoom(){
+  S.roomCode=makeCode();S.isHost=true;S.screen='create';S.connErr='';render();
+  S.peer=new Peer('mathbattle-'+S.roomCode);
+  S.peer.on('open',()=>{S.connErr='';render()});
+  S.peer.on('error',e=>{
+    if(e.type==='unavailable-id'){S.roomCode=makeCode();S.peer.destroy();createRoom();return}
+    S.connErr='연결 오류: '+e.type;render();
+  });
+  S.peer.on('connection',conn=>{S.conn=conn;setupConn(conn);conn.on('open',()=>{S.connected=true;S.screen='lobby';send({type:'WELCOME',nick:S.nick,ops:S.ops,mode:S.mode});render()})});
+}
+
+function joinRoom(code){
+  S.roomCode=code.toUpperCase();S.isHost=false;S.connErr='';S.screen='join';render();
+  S.peer=new Peer();
+  S.peer.on('open',()=>{
+    const conn=S.peer.connect('mathbattle-'+S.roomCode,{reliable:true});
+    S.conn=conn;setupConn(conn);
+    conn.on('open',()=>{S.connected=true;S.screen='lobby';send({type:'JOIN',nick:S.nick});render()});
+  });
+  S.peer.on('error',e=>{S.connErr='연결 실패: 방 코드를 확인하세요';S.screen='home';render()});
+  setTimeout(()=>{if(!S.connected){S.connErr='연결 시간 초과';S.screen='home';render()}},12000);
+}
+
+function setupConn(conn){
+  conn.on('data',raw=>{let d;try{d=JSON.parse(raw)}catch(e){return}handleMsg(d)});
+  conn.on('close',()=>{S.connected=false;if(S.screen==='battle'){S.msg='상대방 연결 끊김!';S.msgType='err';S.gameActive=false;clearAllTimers()}render()});
+}
+
+function handleMsg(d){
+  switch(d.type){
+    case 'WELCOME':S.opp.nick=d.nick;S.ops=d.ops||['+'];S.mode=d.mode||'survival';render();break;
+    case 'JOIN':S.opp.nick=d.nick;render();break;
+    case 'CHAR_SELECT':S.opp.char=CHARS[d.charId];render();break;
+    case 'OPS_UPDATE':S.ops=d.ops;render();break;
+    case 'MODE_UPDATE':S.mode=d.mode;render();break;
+    case 'READY':S.opp.ready=d.ready;if(S.isHost)checkBothReady();render();break;
+    case 'COUNTDOWN':S.screen='countdown';S.countdownNum=d.num;if(d.num>0)sndCd();else sndGo();render();break;
+    case 'GAME_START':startBattle(d);break;
+    case 'NEW_PROBLEM':
+      S.problem=d.problem;S.round=d.round;S.difficulty=d.difficulty;
+      S.timer=TIME_PER_Q;S.me.input='';S.msg='';S.msgType='';S.gameActive=true;
+      startQTimer();render();break;
+    case 'ROUND_RESULT':handleRoundResult(d);break;
+    case 'SPEED_RESULT':handleSpeedResult(d);break;
+    case 'BOSS_HIT':S.bossHp=d.bossHp;S.bossMyDmg=d.yourDmg;S.bossOppDmg=d.myDmg;render();break;
+    case 'BOSS_DONE':handleBossDone(d);break;
+    case 'OPP_ITEM':applyOppItem(d.itemId);break;
+    case 'GAME_OVER':handleGameOver(d);break;
+    case 'SURRENDER':handleOppSurrender();break;
+    case 'ANSWER_CORRECT':if(S.isHost&&S.gameActive){S.gameActive=false;clearInterval(timerInt);resolveRound('guest')}break;
+    case 'SPEED_ANSWER':if(S.isHost){handleSpeedAnswer('guest',d.correct)}break;
+    case 'BOSS_ANSWER':if(S.isHost){handleBossAnswer('guest',d.correct)}break;
+    case 'REMATCH':resetForRematch();S.screen='lobby';render();break;
+  }
+}
+
+// ═══ LOBBY ═══
+function toggleOp(op){
+  if(S.ops.includes(op)){if(S.ops.length>1)S.ops=S.ops.filter(o=>o!==op)}else S.ops=[...S.ops,op];
+  if(S.isHost)send({type:'OPS_UPDATE',ops:S.ops});render();
+}
+function selectMode(m){S.mode=m;if(S.isHost)send({type:'MODE_UPDATE',mode:m});render()}
+function selectChar(id){S.me.char=CHARS[id];send({type:'CHAR_SELECT',charId:id});render()}
+function toggleReady(){S.me.ready=!S.me.ready;send({type:'READY',ready:S.me.ready});if(S.isHost)checkBothReady();render()}
+function checkBothReady(){if(S.me.ready&&S.opp.ready&&S.me.char&&S.opp.char&&S.isHost)startCountdown()}
+
+function startCountdown(){
+  let n=5;S.screen='countdown';S.countdownNum=n;send({type:'COUNTDOWN',num:n});sndCd();render();
+  cdInt=setInterval(()=>{
+    n--;S.countdownNum=n;send({type:'COUNTDOWN',num:n});
+    if(n>0)sndCd();else sndGo();render();
+    if(n<=0){clearInterval(cdInt);const init=buildGameInit();send({type:'GAME_START',...init});startBattle(init)}
+  },1000);
+}
+
+function buildGameInit(){
+  const prob=genProblem(S.ops,0);
+  const init={problem:prob,ops:S.ops,mode:S.mode};
+  if(S.mode==='boss'){
+    const b=BOSSES[Math.floor(Math.random()*BOSSES.length)];
+    init.boss={...b};init.bossHp=b.hp;init.bossMaxHp=b.hp;
+  }
+  return init;
+}
+
+// ═══ BATTLE START ═══
+function startBattle(d){
+  S.screen='battle';S.ops=d.ops;S.mode=d.mode;S.problem=d.problem;
+  S.round=1;S.difficulty=0;S.timer=TIME_PER_Q;S.gameActive=true;S.surrendered=false;
+  S.me.hp=MAX_HP;S.me.score=0;S.me.streak=0;S.me.input='';S.me.items=[];S.me.shield=false;S.me.frozen=false;S.me.doubleNext=false;
+  S.opp.hp=MAX_HP;S.opp.score=0;S.opp.streak=0;S.opp.shield=false;S.opp.frozen=false;S.opp.doubleNext=false;
+  S.msg='';S.msgType='';S.speedMyScore=0;S.speedOppScore=0;S.speedTimer=MODES.speed.timeTotal;
+  if(S.mode==='boss'&&d.boss){S.boss=d.boss;S.bossHp=d.bossHp;S.bossMaxHp=d.bossMaxHp;S.bossMyDmg=0;S.bossOppDmg=0;sndBoss()}
+  if(S.mode==='speed')startSpeedTimer();
+  else startQTimer();
+  startFrozenCheck();render();
+}
+
+function clearAllTimers(){clearInterval(timerInt);clearInterval(frozenInt);clearInterval(cdInt);clearInterval(speedInt)}
+
+function startQTimer(){
+  clearInterval(timerInt);
+  S.timer=TIME_PER_Q;
+  timerInt=setInterval(()=>{
+    if(!S.gameActive)return;
+    S.timer--;
+    if(S.timer<=0){
+      clearInterval(timerInt);S.gameActive=false;
+      if(S.isHost){
+        if(S.mode==='survival'){
+          S.me.streak=0;S.opp.streak=0;S.msg='⏰ 시간 초과!';S.msgType='warn';
+          send({type:'ROUND_RESULT',winner:'none',state:getOppState()});
+          render();setTimeout(()=>nextRound(),1200);
+        }else if(S.mode==='boss'){
+          S.msg='⏰ 시간 초과!';S.msgType='warn';render();
+          setTimeout(()=>nextRound(),1000);
+        }
+      }
+    }
+    render();
+  },1000);
+}
+
+function startSpeedTimer(){
+  clearInterval(speedInt);
+  speedInt=setInterval(()=>{
+    S.speedTimer--;
+    if(S.speedTimer<=0){
+      clearInterval(speedInt);clearInterval(timerInt);S.gameActive=false;
+      if(S.isHost){
+        const w=S.speedMyScore>S.speedOppScore?'host':S.speedOppScore>S.speedMyScore?'guest':'draw';
+        endSpeedGame(w);
+      }
+    }
+    render();
+  },1000);
+}
+
+function startFrozenCheck(){
+  clearInterval(frozenInt);
+  frozenInt=setInterval(()=>{if(S.me.frozen&&Date.now()>=S.me.frozenUntil){S.me.frozen=false;render()}},250);
+}
+
+// ═══ ANSWER SUBMIT ═══
+function submitAnswer(){
+  if(!S.gameActive||!S.problem||S.me.frozen||S.me.input==='')return;
+  const val=parseInt(S.me.input,10);
+  if(isNaN(val)){S.me.input='';render();return}
+  const correct=val===S.problem.ans;
+
+  if(S.mode==='speed'){
+    if(correct){sndOk();S.me.input='';if(S.isHost){handleSpeedAnswer('host',true)}else{send({type:'SPEED_ANSWER',correct:true})}
+      S.problem=genProblem(S.ops,S.difficulty);render();
+    }else{sndNo();S.me.input='';S.msg='오답!';S.msgType='err';render();setTimeout(()=>{S.msg='';render()},600);
+      if(S.isHost)handleSpeedAnswer('host',false);else send({type:'SPEED_ANSWER',correct:false});}
+    return;
+  }
+
+  if(S.mode==='boss'){
+    if(correct){sndOk();S.me.input='';if(S.isHost){handleBossAnswer('host',true)}else{send({type:'BOSS_ANSWER',correct:true})}
+    }else{sndNo();S.me.input='';S.msg='오답!';S.msgType='err';render();setTimeout(()=>{S.msg='';render()},500);}
+    return;
+  }
+
+  // Survival mode
+  if(correct){
+    sndOk();S.gameActive=false;clearInterval(timerInt);
+    if(S.isHost){resolveRound('host')}else{send({type:'ANSWER_CORRECT'});S.msg='정답! 결과 대기...';S.msgType='ok';render()}
+  }else{sndNo();S.me.input='';S.me.streak=0;S.msg='오답! 다시!';S.msgType='err';render();setTimeout(()=>{S.msg='';S.msgType='';render()},700)}
+}
+
+// ═══ SURVIVAL LOGIC ═══
+function getOppState(){return{meHp:S.opp.hp,oppHp:S.me.hp,meStr:S.opp.streak,oppStr:S.me.streak,meShield:S.opp.shield,oppShield:S.me.shield,meSc:S.opp.score,oppSc:S.me.score,meItems:S.opp.items,oppItems:S.me.items,msg:S.msg}}
+
+function resolveRound(winner){
+  let dmg=1;
+  const isMe=winner==='host';
+  const atkStreak=(isMe?S.me.streak:S.opp.streak)+1;
+  if(isMe&&S.me.doubleNext){dmg=2;S.me.doubleNext=false}
+  if(!isMe&&S.opp.doubleNext){dmg=2;S.opp.doubleNext=false}
+  if(atkStreak>=ITEM_STREAK&&atkStreak%ITEM_STREAK===0)dmg+=1;
+  let blocked=false;
+  if(isMe&&S.opp.shield){blocked=true;S.opp.shield=false}
+  if(!isMe&&S.me.shield){blocked=true;S.me.shield=false}
+  if(!blocked){if(isMe)S.opp.hp=Math.max(0,S.opp.hp-dmg);else S.me.hp=Math.max(0,S.me.hp-dmg);sndAtk()}
+  if(isMe){S.me.streak=atkStreak;S.me.score+=dmg*10;S.opp.streak=0}else{S.opp.streak=atkStreak;S.opp.score+=dmg*10;S.me.streak=0}
+  if(atkStreak>=ITEM_STREAK&&atkStreak%ITEM_STREAK===0){
+    const itm=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+    if(isMe&&S.me.items.length<3)S.me.items.push({...itm});
+    if(!isMe&&S.opp.items.length<3)S.opp.items.push({...itm});
+  }
+  const wName=isMe?S.nick:S.opp.nick;
+  const dmgT=blocked?' 🛡️방어됨!':(dmg>1?` (${dmg}배!)`:' ');
+  S.msg=`✅ ${wName} 정답!${dmgT}`;S.msgType='ok';
+  send({type:'ROUND_RESULT',winner:isMe?'opp':'me',state:getOppState()});
+  render();
+  if(S.me.hp<=0||S.opp.hp<=0){
+    setTimeout(()=>{const w=S.me.hp<=0?'opp':'me';finishGame(w)},1200);return;
+  }
+  setTimeout(()=>nextRound(),1400);
+}
+
+function handleRoundResult(d){
+  if(d.winner!=='none'){
+    S.me.hp=d.state.meHp;S.opp.hp=d.state.oppHp;S.me.streak=d.state.meStr;S.opp.streak=d.state.oppStr;
+    S.me.shield=d.state.meShield;S.opp.shield=d.state.oppShield;S.me.score=d.state.meSc;S.opp.score=d.state.oppSc;
+    if(d.state.meItems)S.me.items=d.state.meItems;if(d.state.oppItems)S.opp.items=d.state.oppItems;
+    if(d.winner==='me')sndOk();else sndAtk();
+  }
+  S.msg=d.state.msg||'⏰ 시간 초과!';S.msgType=d.winner==='none'?'warn':'ok';
+  S.gameActive=false;clearInterval(timerInt);render();
+}
+
+function nextRound(){
+  if(!S.isHost)return;
+  S.round++;S.difficulty=Math.floor((S.round-1)/4);
+  const prob=genProblem(S.ops,S.difficulty);
+  S.problem=prob;S.timer=TIME_PER_Q;S.me.input='';S.msg='';S.msgType='';S.gameActive=true;
+  send({type:'NEW_PROBLEM',problem:prob,round:S.round,difficulty:S.difficulty});
+  startQTimer();render();
+}
+
+// ═══ SPEED LOGIC ═══
+function handleSpeedAnswer(who,correct){
+  if(correct){if(who==='host')S.speedMyScore++;else S.speedOppScore++;S.difficulty=Math.floor((S.speedMyScore+S.speedOppScore)/6)}
+  S.problem=genProblem(S.ops,S.difficulty);
+  send({type:'SPEED_RESULT',myScore:S.speedOppScore,oppScore:S.speedMyScore,problem:S.problem,timer:S.speedTimer});
+  render();
+}
+function handleSpeedResult(d){S.speedMyScore=d.myScore;S.speedOppScore=d.oppScore;S.problem=d.problem;S.me.input='';render()}
+function endSpeedGame(w){
+  const winner=w==='host'?'me':w==='guest'?'opp':'draw';
+  const pts=calcPts(winner==='me',S.difficulty,0);
+  S.winner=winner;S.ptsEarned=pts;
+  if(winner==='me'||winner==='draw')addUserPts(pts);
+  send({type:'GAME_OVER',winner:w==='host'?'opp':w==='guest'?'me':'draw',difficulty:S.difficulty});
+  sndWin();S.screen='result';clearAllTimers();render();
+}
+
+// ═══ BOSS LOGIC ═══
+function handleBossAnswer(who,correct){
+  if(!correct)return;
+  let dmg=1;
+  if(who==='host'){S.bossMyDmg++;if(S.me.doubleNext){dmg=2;S.me.doubleNext=false}}
+  else{S.bossOppDmg++;if(S.opp.doubleNext){dmg=2;S.opp.doubleNext=false}}
+  S.bossHp=Math.max(0,S.bossHp-dmg);sndAtk();
+  S.problem=genProblem(S.ops,S.difficulty);S.round++;S.difficulty=Math.floor((S.round-1)/5);
+  send({type:'BOSS_HIT',bossHp:S.bossHp,myDmg:S.bossMyDmg,yourDmg:S.bossOppDmg,problem:S.problem,round:S.round,difficulty:S.difficulty});
+  S.me.input='';
+  if(S.bossHp<=0){
+    S.gameActive=false;clearAllTimers();
+    setTimeout(()=>{
+      const pts=calcPts(true,S.difficulty,MAX_HP);
+      send({type:'BOSS_DONE',pts,difficulty:S.difficulty});
+      sndWin();S.winner='me';S.ptsEarned=pts;addUserPts(pts);S.screen='result';render();
+    },800);
+    return;
+  }
+  startQTimer();render();
+}
+function handleBossDone(d){sndWin();S.ptsEarned=d.pts;addUserPts(d.pts);S.winner='me';S.screen='result';clearAllTimers();render()}
+
+// ═══ POINTS ═══
+function calcPts(won,diff,hpLeft){
+  if(!won)return Math.max(5,diff*3);
+  return 50*(diff+1)+(hpLeft||0)*20+((hpLeft||0)===MAX_HP?100:0);
+}
+
+// ═══ ITEMS ═══
+function useMyItem(idx){
+  if(S.screen!=='battle'||!S.gameActive)return;
+  const itm=S.me.items[idx];if(!itm)return;sndItem();
+  S.me.items.splice(idx,1);
+  if(itm.id==='shield'){S.me.shield=true;S.msg='🛡️ 방어막!';S.msgType='ok'}
+  if(itm.id==='double'){S.me.doubleNext=true;S.msg='⚡ 다음 2배!';S.msgType='ok'}
+  if(itm.id==='freeze'){send({type:'OPP_ITEM',itemId:'freeze'});S.msg='❄️ 상대 얼림!';S.msgType='ok'}
+  render();
+}
+function applyOppItem(id){
+  sndItem();
+  if(id==='freeze'){S.me.frozen=true;S.me.frozenUntil=Date.now()+3000;S.msg='❄️ 얼어붙었다!';S.msgType='err'}
+  if(id==='shield')S.opp.shield=true;if(id==='double')S.opp.doubleNext=true;
+  render();
+}
+
+// ═══ SURRENDER ═══
+function showSurrender(){S.showSurrenderModal=true;render()}
+function hideSurrender(){S.showSurrenderModal=false;render()}
+function confirmSurrender(){
+  S.showSurrenderModal=false;S.surrendered=true;S.gameActive=false;clearAllTimers();
+  const penalty=Math.floor(getUserPts()*SURRENDER_PENALTY);
+  addUserPts(-penalty);
+  send({type:'SURRENDER'});
+  S.winner='opp';S.ptsEarned=-penalty;S.screen='result';render();
+}
+function handleOppSurrender(){
+  S.gameActive=false;clearAllTimers();sndWin();
+  const pts=calcPts(true,S.difficulty,S.me.hp);
+  addUserPts(pts);S.winner='me';S.ptsEarned=pts;S.screen='result';render();
+}
+
+// ═══ GAME OVER ═══
+function finishGame(w){
+  sndWin();clearAllTimers();
+  const pts=calcPts(w==='me',S.difficulty,w==='me'?S.me.hp:0);
+  S.winner=w;S.ptsEarned=pts;addUserPts(w==='me'?pts:Math.max(5,S.difficulty*3));
+  send({type:'GAME_OVER',winner:w==='me'?'opp':'me',difficulty:S.difficulty});
+  S.screen='result';render();
+}
+function handleGameOver(d){
+  sndWin();clearAllTimers();
+  const w=d.winner;const pts=calcPts(w==='me',d.difficulty,w==='me'?S.me.hp:0);
+  S.winner=w;S.ptsEarned=pts;addUserPts(pts);S.screen='result';render();
+}
+
+// ═══ NUMPAD ═══
+function padPress(k){if(k==='✓')submitAnswer();else if(k==='⌫'){S.me.input=S.me.input.slice(0,-1);render()}else if(S.me.input.length<5){S.me.input+=k;render()}}
+
+// ═══ RESET ═══
+function resetForRematch(){
+  S.me.char=null;S.me.hp=MAX_HP;S.me.score=0;S.me.streak=0;S.me.input='';S.me.items=[];S.me.shield=false;S.me.frozen=false;S.me.doubleNext=false;S.me.ready=false;
+  S.opp.char=null;S.opp.hp=MAX_HP;S.opp.score=0;S.opp.streak=0;S.opp.shield=false;S.opp.frozen=false;S.opp.doubleNext=false;S.opp.ready=false;
+  S.problem=null;S.round=0;S.difficulty=0;S.msg='';S.winner=null;S.ptsEarned=0;S.gameActive=false;S.surrendered=false;
+  S.speedMyScore=0;S.speedOppScore=0;S.speedTimer=30;S.boss=null;S.bossHp=0;
+  clearAllTimers();
+}
+function goHome(){resetForRematch();if(S.peer){S.peer.destroy();S.peer=null}S.conn=null;S.connected=false;S.screen='home';S.connErr='';render()}
+function requestRematch(){send({type:'REMATCH'});resetForRematch();S.screen='lobby';render()}
+
+// ══════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════
+function render(){
+  const app=document.getElementById('app');
+  const mr=document.getElementById('modal-root');
+  mr.innerHTML=S.showSurrenderModal?rSurrenderModal():'';
+  switch(S.screen){
+    case 'login':app.innerHTML=rLogin();break;
+    case 'home':app.innerHTML=rHome();break;
+    case 'create':app.innerHTML=rCreate();break;
+    case 'join':app.innerHTML=rJoin();break;
+    case 'lobby':app.innerHTML=rLobby();break;
+    case 'countdown':app.innerHTML=rCountdown();break;
+    case 'battle':app.innerHTML=rBattle();break;
+    case 'result':app.innerHTML=rResult();break;
+  }
+}
+
+// ═══ LOGIN ═══
+function rLogin(){
+  return `<div class="card">
+    <div style="font-size:3em;margin-bottom:4px">⚔️</div>
+    <h1>수학 대전</h1>
+    <p class="sub">1:1 연산 배틀 게임</p>
+    <div class="divider"></div>
+    <div style="margin:12px 0;text-align:left">
+      <label style="font-weight:700;font-size:.85em;margin-left:4px">아이디</label>
+      <input type="text" id="login-id" placeholder="아이디 입력" maxlength="12" style="margin:4px 0 10px;text-transform:none;letter-spacing:1px">
+      <label style="font-weight:700;font-size:.85em;margin-left:4px">비밀번호</label>
+      <input type="password" id="login-pw" placeholder="비밀번호 입력" maxlength="20" style="margin:4px 0 10px">
+      <label style="font-weight:700;font-size:.85em;margin-left:4px">닉네임</label>
+      <input type="text" id="login-nick" placeholder="게임에서 보여질 이름" maxlength="8" style="margin:4px 0 10px;text-transform:none;letter-spacing:0">
+    </div>
+    <div class="flex-row mt4">
+      <button class="btn btn-pri btn-lg" onclick="doLogin()">🔑 로그인</button>
+      <button class="btn btn-suc btn-lg" onclick="doRegister()">📝 회원가입</button>
+    </div>
+    <p style="margin-top:14px;font-size:.72em;color:#adb5bd">계정 정보는 이 기기에만 저장됩니다</p>
+  </div>`;
+}
+
+// ═══ HOME ═══
+function rHome(){
+  const pts=getUserPts();
+  const ranking=getRanking();
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:.82em;color:#868e96">👤 ${S.nick}</span>
+      <span style="font-size:.82em;color:var(--pri);font-weight:700">🏆 ${pts}P</span>
+    </div>
+    <div style="font-size:2.5em">⚔️</div>
+    <h1 style="font-size:1.6em">수학 대전</h1>
+    <div class="divider"></div>
+    ${S.connErr?`<div class="status status-err mb8">${S.connErr}</div>`:''}
+    <div class="flex-row mt8">
+      <button class="btn btn-pri btn-lg" onclick="S.screen='createSetup';render()">🏠 방 만들기</button>
+      <button class="btn btn-suc btn-lg" onclick="showJoinInput()">🚪 입장하기</button>
+    </div>
+    <div id="join-area" style="display:none;margin-top:12px">
+      <input type="text" id="code-input" placeholder="방 코드 4자리" maxlength="4" style="letter-spacing:6px;text-transform:uppercase">
+      <button class="btn btn-suc mt4" onclick="onJoin()">입장</button>
+    </div>
+    ${ranking.length>0?`
+    <div style="margin-top:16px;text-align:left">
+      <div style="font-weight:700;font-size:.9em;margin-bottom:6px">🏅 랭킹 TOP 10</div>
+      ${ranking.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:3px 8px;font-size:.82em;${r.id===S.userId?'font-weight:700;color:var(--pri)':'color:#495057'}">
+        <span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} ${r.nick}</span><span>${r.pts}P</span>
+      </div>`).join('')}
+    </div>`:''}
+    <button class="btn btn-outline btn-sm mt12" onclick="doLogout()">로그아웃</button>
+  </div>`;
+}
+
+// ═══ CREATE SETUP (mode select before creating room) ═══
+// We'll handle this as a special screen
+function rCreateSetup(){
+  const allOps=['+','−','×','÷'];
+  return `<div class="card">
+    <h2>🏠 방 설정</h2>
+    <div class="divider"></div>
+    <div style="text-align:left;margin-bottom:8px"><b style="font-size:.9em">🎮 게임 모드</b></div>
+    ${Object.entries(MODES).map(([k,m])=>`
+    <div class="mode-card ${S.mode===k?'sel':''}" onclick="selectMode('${k}')">
+      <div class="mode-title">${m.name}</div>
+      <div class="mode-desc">${m.desc}</div>
+    </div>`).join('')}
+    <div style="text-align:left;margin:12px 0 6px"><b style="font-size:.9em">📐 연산</b></div>
+    <div class="ops-row">${allOps.map(o=>`<div class="op-btn ${S.ops.includes(o)?'active':''}" onclick="toggleOp('${o}')">${o}</div>`).join('')}</div>
+    <div class="flex-row mt12">
+      <button class="btn btn-gray" onclick="S.screen='home';render()">◀ 돌아가기</button>
+      <button class="btn btn-pri btn-lg" onclick="createRoom()">방 만들기 ▶</button>
+    </div>
+  </div>`;
+}
+
+function rCreate(){
+  return `<div class="card">
+    <h2>🏠 방 만들기</h2>
+    <p class="sub">상대에게 아래 코드를 알려주세요!</p>
+    <div class="room-code">${S.roomCode}</div>
+    <div style="font-size:.82em;color:#868e96;margin-bottom:8px">${MODES[S.mode]?.name||''} · ${S.ops.join(' ')}</div>
+    <div class="status status-wait">⏳ 상대 접속 대기 중...</div>
+    ${S.connErr?`<div class="status status-err mt4">${S.connErr}</div>`:''}
+    <div class="mt12"><button class="btn btn-gray" onclick="goHome()">취소</button></div>
+  </div>`;
+}
+
+function rJoin(){
+  return `<div class="card">
+    <h2>🚪 입장 중...</h2>
+    <div class="room-code">${S.roomCode}</div>
+    <div class="status status-wait">⏳ 연결 중...</div>
+    <div class="mt12"><button class="btn btn-gray" onclick="goHome()">취소</button></div>
+  </div>`;
+}
+
+function rLobby(){
+  const mc=S.me.char,oc=S.opp.char;
+  const canReady=mc!=null&&S.connected;
+  return `<div class="card">
+    <h2>⚔️ 대전 준비</h2>
+    <div style="font-size:.8em;color:#868e96">방: <b>${S.roomCode}</b> · ${MODES[S.mode]?.name||''}</div>
+    <div class="divider"></div>
+    <div class="player-slot" style="background:${mc?mc.color+'15':'#f8f9fa'}">
+      <div class="big-em">${mc?mc.emoji:'❓'}</div>
+      <div class="info"><div class="pnm">${S.nick}</div><div class="pch">${mc?mc.name:'캐릭터를 선택하세요'}</div></div>
+      <div class="ready-badge" style="background:${S.me.ready?'#D3F9D8':'#FFE3E3'};color:${S.me.ready?'#2B8A3E':'#C92A2A'}">${S.me.ready?'준비!':'대기'}</div>
+    </div>
+    <div class="player-slot" style="background:${oc?oc.color+'15':'#f8f9fa'}">
+      <div class="big-em">${oc?oc.emoji:'❓'}</div>
+      <div class="info"><div class="pnm">${S.opp.nick||'상대방'}</div><div class="pch">${oc?oc.name:S.connected?'선택 중...':'접속 대기'}</div></div>
+      <div class="ready-badge" style="background:${S.opp.ready?'#D3F9D8':'#FFE3E3'};color:${S.opp.ready?'#2B8A3E':'#C92A2A'}">${S.opp.ready?'준비!':S.connected?'대기':'미접속'}</div>
+    </div>
+    <div style="margin-top:8px"><b style="font-size:.85em">🎭 캐릭터 선택 (40종)</b></div>
+    <div class="char-grid">
+      ${CHARS.map(c=>{
+        const sel=mc&&mc.id===c.id;const dis=oc&&oc.id===c.id;
+        return `<div class="char-cell ${sel?'selected':''} ${dis?'disabled':''}" onclick="selectChar(${c.id})">
+          <div class="em">${c.emoji}</div><div class="nm" style="color:${c.color}">${c.name}</div></div>`;
+      }).join('')}
+    </div>
+    <div class="flex-row mt4">
+      <button class="btn btn-gray btn-sm" onclick="goHome()">나가기</button>
+      <button class="btn ${S.me.ready?'btn-war':'btn-suc'}" ${canReady?'':'disabled'} onclick="toggleReady()">${S.me.ready?'⏳ 준비 취소':'✅ 준비 완료'}</button>
+    </div>
+    ${S.me.ready&&S.opp.ready&&mc&&oc?`<div class="status status-ok mt4">🎮 양쪽 준비 완료! ${S.isHost?'시작 중...':'대기 중...'}</div>`:''}
+  </div>`;
+}
+
+function rCountdown(){
+  const n=S.countdownNum;
+  return `<div style="text-align:center">
+    <div class="countdown-num">${n>0?n:'시작!'}</div>
+    <div style="color:rgba(255,255,255,.7);font-size:1.1em;margin-top:8px">${S.me.char?.emoji||''} vs ${S.opp.char?.emoji||''}</div>
+    <div style="color:rgba(255,255,255,.5);font-size:.85em;margin-top:4px">${MODES[S.mode]?.name||''}</div>
+  </div>`;
+}
+
+// ═══ BATTLE ═══
+function rBattle(){
+  if(S.mode==='speed')return rBattleSpeed();
+  if(S.mode==='boss')return rBattleBoss();
+  return rBattleSurvival();
+}
+
+function rBattleSurvival(){
+  const me=S.me,op=S.opp;
+  const tPct=Math.max(0,(S.timer/TIME_PER_Q)*100);
+  const tClr=tPct>50?'var(--suc)':tPct>25?'var(--war)':'var(--dan)';
+  const msgBg=S.msgType==='ok'?'#EDF2FF':S.msgType==='err'?'#FFE3E3':S.msgType==='warn'?'#FFF3BF':'#f8f9fa';
+  const msgClr=S.msgType==='ok'?'var(--pri)':S.msgType==='err'?'var(--dan)':S.msgType==='warn'?'#E67700':'#495057';
+  return `<div class="card" style="padding:10px">
+    <div style="display:flex;justify-content:space-between;font-size:.75em;color:#868e96">
+      <span>라운드 ${S.round} · 🛡️서바이벌</span><span>난이도 ${'⭐'.repeat(Math.min(S.difficulty+1,6))}</span>
+    </div>
+    ${rBattleTop(me,op)}
+    <div class="timer-bar"><div class="timer-fill" style="width:${tPct}%;background:${tClr}"></div></div>
+    <div class="problem-box"><div class="tt">⏱️ ${S.timer}초</div><div class="pt">${S.problem?S.problem.text:'...'}</div></div>
+    ${S.msg?`<div class="msg-box" style="background:${msgBg};color:${msgClr}">${S.msg}</div>`:''}
+    ${rInput(me)}
+    ${rItemsRow(me)}
+    <div class="flex-row mt4"><button class="btn btn-dan btn-sm" onclick="showSurrender()">🏳️ 패배 인정</button></div>
+  </div>`;
+}
+
+function rBattleSpeed(){
+  const sPct=Math.max(0,(S.speedTimer/MODES.speed.timeTotal)*100);
+  const sClr=sPct>50?'var(--suc)':sPct>25?'var(--war)':'var(--dan)';
+  return `<div class="card" style="padding:10px">
+    <div style="display:flex;justify-content:space-between;font-size:.75em;color:#868e96">
+      <span>⚡ 스피드 모드</span><span>난이도 ${'⭐'.repeat(Math.min(S.difficulty+1,6))}</span>
+    </div>
+    <div class="battle-top">
+      <div class="battle-side"><div class="em">${S.me.char?.emoji||'?'}</div><div style="font-size:.7em;font-weight:700">${S.nick}</div>
+        <div style="font-size:1.8em;font-weight:900;color:var(--pri)">${S.speedMyScore}</div></div>
+      <div class="battle-vs">VS</div>
+      <div class="battle-side"><div class="em">${S.opp.char?.emoji||'?'}</div><div style="font-size:.7em;font-weight:700">${S.opp.nick}</div>
+        <div style="font-size:1.8em;font-weight:900;color:var(--dan)">${S.speedOppScore}</div></div>
+    </div>
+    <div class="timer-bar"><div class="timer-fill" style="width:${sPct}%;background:${sClr}"></div></div>
+    <div class="problem-box"><div class="tt">⏱️ 남은 시간 ${S.speedTimer}초</div><div class="pt">${S.problem?S.problem.text:'...'}</div></div>
+    ${S.msg?`<div class="msg-box" style="background:${S.msgType==='err'?'#FFE3E3':'#EDF2FF'};color:${S.msgType==='err'?'var(--dan)':'var(--pri)'}">${S.msg}</div>`:''}
+    ${rInput(S.me)}
+    <div class="flex-row mt4"><button class="btn btn-dan btn-sm" onclick="showSurrender()">🏳️ 패배 인정</button></div>
+  </div>`;
+}
+
+function rBattleBoss(){
+  const bPct=S.bossMaxHp>0?Math.max(0,(S.bossHp/S.bossMaxHp)*100):100;
+  const tPct=Math.max(0,(S.timer/TIME_PER_Q)*100);
+  const tClr=tPct>50?'var(--suc)':tPct>25?'var(--war)':'var(--dan)';
+  return `<div class="card" style="padding:10px">
+    <div style="font-size:.75em;color:#868e96">🐉 보스 대전 · 라운드 ${S.round}</div>
+    <div style="text-align:center;margin:4px 0">
+      <div class="boss-emoji">${S.boss?.emoji||'🐉'}</div>
+      <div style="font-weight:800;color:${S.boss?.color||'var(--boss)'}">${S.boss?.name||'보스'}</div>
+      <div class="boss-hp-bar"><div class="boss-hp-fill" style="width:${bPct}%"></div></div>
+      <div style="font-size:.8em;color:#868e96">HP ${S.bossHp} / ${S.bossMaxHp}</div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:24px;font-size:.8em;margin:4px 0">
+      <span>${S.me.char?.emoji||''} <b>${S.nick}</b>: ${S.bossMyDmg}타</span>
+      <span>${S.opp.char?.emoji||''} <b>${S.opp.nick}</b>: ${S.bossOppDmg}타</span>
+    </div>
+    <div class="timer-bar"><div class="timer-fill" style="width:${tPct}%;background:${tClr}"></div></div>
+    <div class="problem-box"><div class="tt">⏱️ ${S.timer}초</div><div class="pt">${S.problem?S.problem.text:'...'}</div></div>
+    ${S.msg?`<div class="msg-box" style="background:#EDF2FF;color:var(--pri)">${S.msg}</div>`:''}
+    ${rInput(S.me)}
+    <div class="flex-row mt4"><button class="btn btn-dan btn-sm" onclick="showSurrender()">🏳️ 포기</button></div>
+  </div>`;
+}
+
+function rBattleTop(me,op){
+  return `<div class="battle-top">
+    <div class="battle-side">
+      <div class="em">${me.char?.emoji||'?'}${me.shield?'<span class="shield-i">🛡️</span>':''}${me.doubleNext?'<span class="double-i">⚡</span>':''}</div>
+      <div style="font-size:.7em;font-weight:700;color:${me.char?.color||'#333'}">${S.nick}</div>
+      <div class="hearts">${Array.from({length:MAX_HP}).map((_,i)=>`<span class="${i<me.hp?'':'lost'}">❤️</span>`).join('')}</div>
+      ${me.streak>0?`<div class="streak-badge">🔥${me.streak}</div>`:''}
+      <div style="font-size:1em;font-weight:800">${me.score}점</div>
+    </div>
+    <div class="battle-vs">VS</div>
+    <div class="battle-side">
+      <div class="em">${op.char?.emoji||'?'}${op.shield?'<span class="shield-i">🛡️</span>':''}${op.doubleNext?'<span class="double-i">⚡</span>':''}</div>
+      <div style="font-size:.7em;font-weight:700;color:${op.char?.color||'#333'}">${S.opp.nick}</div>
+      <div class="hearts">${Array.from({length:MAX_HP}).map((_,i)=>`<span class="${i<op.hp?'':'lost'}">❤️</span>`).join('')}</div>
+      ${op.streak>0?`<div class="streak-badge">🔥${op.streak}</div>`:''}
+      <div style="font-size:1em;font-weight:800">${op.score}점</div>
+    </div>
+  </div>`;
+}
+
+function rInput(me){
+  return `<div style="position:relative">
+    ${me.frozen?'<div class="frozen-ov">❄️ 얼음!</div>':''}
+    <div class="input-disp" style="border-color:${me.char?.color||'var(--pri)'}">${me.input||'<span style="color:#ced4da;font-size:.55em">답 입력</span>'}</div>
+    <div class="numpad" style="${me.frozen?'opacity:.25;pointer-events:none':''}">
+      ${['1','2','3','4','5','6','7','8','9','⌫','0','✓'].map(k=>`<button class="${k==='✓'?'key-ok':k==='⌫'?'key-del':''}" onclick="padPress('${k}')">${k}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function rItemsRow(me){
+  return `<div class="items-row">
+    ${me.items.length?me.items.map((it,i)=>`<button class="item-btn" onclick="useMyItem(${i})" title="${it.desc}">${it.emoji}</button>`).join('')
+      :`<span style="font-size:.7em;color:#adb5bd">🎁 ${ITEM_STREAK}연속 정답 → 아이템</span>`}
+  </div>`;
+}
+
+// ═══ SURRENDER MODAL ═══
+function rSurrenderModal(){
+  return `<div class="modal-bg" onclick="hideSurrender()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="font-size:3em">⚠️</div>
+      <h3 style="color:var(--dan)">패배를 인정하시겠습니까?</h3>
+      <p style="background:#FFE3E3;padding:12px;border-radius:12px;font-weight:600;color:var(--dan)">
+        🚨 주의: 중도 포기 시 현재 보유 포인트의 <b>50%</b>가 차감됩니다!<br>
+        <span style="font-size:.85em">(현재 포인트: ${getUserPts()}P → 약 ${Math.floor(getUserPts()*SURRENDER_PENALTY)}P 차감)</span>
+      </p>
+      <p style="font-size:.95em;font-weight:700;margin-top:12px">그래도 패배를 인정하시나요?</p>
+      <div class="flex-row mt8">
+        <button class="btn btn-gray" onclick="hideSurrender()">아니요, 계속 싸울게요!</button>
+        <button class="btn btn-dan" onclick="confirmSurrender()">네, 패배 인정</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══ RESULT ═══
+function rResult(){
+  const won=S.winner==='me';
+  const draw=S.winner==='draw';
+  const wChar=won?S.me.char:S.opp.char;
+  const wName=draw?'무승부':won?S.nick:S.opp.nick;
+  const totalPts=getUserPts();
+  const isBoss=S.mode==='boss';
+  const isSurr=S.surrendered;
+
+  return `<div class="card">
+    <div style="font-size:2.8em">${isSurr?'🏳️':isBoss&&won?'🎉':won||draw?'🏆':'😢'}</div>
+    <div style="font-size:3em;margin:4px 0">${isBoss&&won?'🐉💥':wChar?.emoji||'?'}</div>
+    <h2 style="color:${isSurr?'var(--dan)':draw?'var(--war)':wChar?.color||'#333'}">
+      ${isSurr?'패배 인정...':isBoss&&won?'보스 처치 성공!':draw?'무승부!':wName+' 승리!'}
+    </h2>
+    <div class="divider"></div>
+    ${S.mode==='speed'?`
+    <div class="score-row">
+      <div class="score-col"><div style="font-size:1.3em">${S.me.char?.emoji||''}</div><div class="val" style="color:var(--pri)">${S.speedMyScore}</div><div class="lbl">${S.nick}</div></div>
+      <div style="align-self:center;font-size:1.3em;color:#ced4da">VS</div>
+      <div class="score-col"><div style="font-size:1.3em">${S.opp.char?.emoji||''}</div><div class="val" style="color:var(--dan)">${S.speedOppScore}</div><div class="lbl">${S.opp.nick}</div></div>
+    </div>
+    `:isBoss?`
+    <div class="score-row">
+      <div class="score-col"><div style="font-size:1.3em">${S.me.char?.emoji||''}</div><div class="val">${S.bossMyDmg}타</div><div class="lbl">${S.nick}</div></div>
+      <div class="score-col"><div style="font-size:1.3em">${S.opp.char?.emoji||''}</div><div class="val">${S.bossOppDmg}타</div><div class="lbl">${S.opp.nick}</div></div>
+    </div>
+    `:`
+    <div class="score-row">
+      <div class="score-col"><div style="font-size:1.3em">${S.me.char?.emoji||''}</div><div class="val" style="color:${won?'var(--suc)':'var(--dan)'}">${S.me.score}</div><div class="lbl">${S.nick}</div></div>
+      <div style="align-self:center;font-size:1.3em;color:#ced4da">VS</div>
+      <div class="score-col"><div style="font-size:1.3em">${S.opp.char?.emoji||''}</div><div class="val" style="color:${!won?'var(--suc)':'var(--dan)'}">${S.opp.score}</div><div class="lbl">${S.opp.nick}</div></div>
+    </div>`}
+
+    <div style="background:${S.ptsEarned>=0?'#EDF2FF':'#FFE3E3'};border-radius:12px;padding:12px;margin:10px 0">
+      <div style="font-size:.82em;color:${S.ptsEarned>=0?'var(--pri)':'var(--dan)'};font-weight:700">${S.ptsEarned>=0?'획득 포인트':'차감 포인트'}</div>
+      <div class="result-pts" style="color:${S.ptsEarned>=0?'var(--pri)':'var(--dan)'}">${S.ptsEarned>=0?'+':''}${S.ptsEarned}</div>
+      <div style="font-size:.75em;color:#868e96">${isSurr?'중도 포기 패널티 (50%)':'난이도 ⭐×'+(S.difficulty+1)+(won&&S.me.hp===MAX_HP?' + 퍼펙트!':'')}</div>
+    </div>
+    <div style="font-size:.95em;color:#495057">🏆 누적 포인트: <b style="color:var(--pri);font-size:1.2em">${totalPts}P</b></div>
+    <div class="flex-row mt12">
+      <button class="btn btn-gray" onclick="goHome()">🏠 나가기</button>
+      <button class="btn btn-suc" onclick="requestRematch()">🔄 재대결</button>
+    </div>
+  </div>`;
+}
+
+// ═══ AUTH HANDLERS ═══
+function doLogin(){
+  const id=(document.getElementById('login-id')?.value||'').trim();
+  const pw=(document.getElementById('login-pw')?.value||'').trim();
+  const nick=(document.getElementById('login-nick')?.value||'').trim();
+  if(!id||!pw||!nick){alert('모든 항목을 입력해주세요!');return}
+  const users=loadUser();
+  if(users[id]){
+    if(users[id].pw!==pw){alert('비밀번호가 틀렸습니다!');return}
+    users[id].nick=nick;saveUser(users);
+  }else{alert('등록되지 않은 아이디입니다. 회원가입을 해주세요.');return}
+  S.userId=id;S.userPw=pw;S.nick=nick;S.loggedIn=true;S.screen='home';render();
+}
+function doRegister(){
+  const id=(document.getElementById('login-id')?.value||'').trim();
+  const pw=(document.getElementById('login-pw')?.value||'').trim();
+  const nick=(document.getElementById('login-nick')?.value||'').trim();
+  if(!id||!pw||!nick){alert('모든 항목을 입력해주세요!');return}
+  if(id.length<2){alert('아이디는 2자 이상이어야 합니다.');return}
+  if(pw.length<2){alert('비밀번호는 2자 이상이어야 합니다.');return}
+  const users=loadUser();
+  if(users[id]){alert('이미 존재하는 아이디입니다!');return}
+  users[id]={pw,nick,pts:0};saveUser(users);
+  S.userId=id;S.userPw=pw;S.nick=nick;S.loggedIn=true;S.screen='home';render();
+  alert('🎉 회원가입 완료! 환영합니다, '+nick+'님!');
+}
+function doLogout(){S.loggedIn=false;S.userId='';S.userPw='';S.nick='';S.screen='login';render()}
+function showJoinInput(){const a=document.getElementById('join-area');if(a)a.style.display=a.style.display==='none'?'block':'none'}
+function onJoin(){const c=(document.getElementById('code-input')?.value||'').trim();if(!c||c.length!==4){alert('4자리 방 코드를 입력하세요!');return}joinRoom(c)}
+
+// createSetup screen override
+const _origRender=render;
+render=function(){
+  if(S.screen==='createSetup'){document.getElementById('app').innerHTML=rCreateSetup();document.getElementById('modal-root').innerHTML='';return}
+  _origRender();
+};
+
+// ═══ INIT ═══
+render();
+</script>
+</body>
+</html>
