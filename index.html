@@ -1914,59 +1914,71 @@
                 guestSection.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">게스트 대기 중...</div>';
             }
 
-            // Setup buttons
+            // Setup buttons - both host and guest use ready button
             const readyButtonSection = document.getElementById('readyButtonSection');
             const waitingMessageSection = document.getElementById('waitingMessageSection');
 
-            if (gameState.isHost) {
-                readyButtonSection.style.display = 'none';
-                if (gameState.guestUid && gameState.opponentReady) {
-                    startGameBtn.style.display = 'block';
-                    waitingMessageSection.style.display = 'none';
-                } else {
-                    startGameBtn.style.display = 'none';
-                    waitingMessageSection.style.display = 'block';
-                }
-            } else {
+            startGameBtn.style.display = 'none'; // No manual start - auto start on both ready
+
+            if (gameState.guestUid) {
+                // Guest is present - show ready button for both host and guest
                 readyButtonSection.style.display = 'block';
-                startGameBtn.style.display = 'none';
                 if (!gameState.isReady) {
-                    readyBtn.textContent = '준비 완료';
+                    readyBtn.textContent = '✅ 준비 완료';
                     readyBtn.classList.remove('ready-btn');
                     readyBtn.classList.add('not-ready-btn');
                 } else {
-                    readyBtn.textContent = '준비 취소';
+                    readyBtn.textContent = '⏳ 준비 취소';
                     readyBtn.classList.remove('not-ready-btn');
                     readyBtn.classList.add('ready-btn');
                 }
+
+                if (gameState.isReady && gameState.opponentReady) {
+                    waitingMessageSection.innerHTML = '<div style="text-align:center;color:#4CAF50;font-weight:bold;padding:10px;">🎮 양쪽 준비 완료! 5초 후 시작합니다...</div>';
+                    waitingMessageSection.style.display = 'block';
+                } else if (gameState.isReady) {
+                    waitingMessageSection.innerHTML = '<div style="text-align:center;color:#FF9800;padding:10px;">상대방을 기다리는 중...</div>';
+                    waitingMessageSection.style.display = 'block';
+                } else {
+                    waitingMessageSection.style.display = 'none';
+                }
+            } else {
+                // No guest yet
+                readyButtonSection.style.display = 'none';
+                waitingMessageSection.innerHTML = '<div style="text-align:center;color:#999;padding:10px;">게스트 입장을 기다리는 중...</div>';
+                waitingMessageSection.style.display = 'block';
             }
         }
 
         // Ready button handler
         readyBtn.addEventListener('click', async () => {
             gameState.isReady = !gameState.isReady;
-            await db.collection('rooms').doc(currentRoom).update({
-                guestReady: gameState.isReady
-            });
+            try {
+                await db.collection('rooms').doc(currentRoom).update({
+                    [gameState.isHost ? 'hostReady' : 'guestReady']: gameState.isReady
+                });
+            } catch (e) { console.log('Ready update error:', e); }
             sendPeerMessage({
                 type: 'READY_STATUS',
                 ready: gameState.isReady
             });
             showRoomWaiting();
+            // Check if both ready → auto start
+            checkBothReadyAndStart();
         });
 
-        // Start game button handler
-        startGameBtn.addEventListener('click', async () => {
-            if (gameState.guestUid && gameState.opponentReady && gameState.isReady) {
-                await db.collection('rooms').doc(currentRoom).update({
-                    status: 'playing'
-                });
-                sendPeerMessage({
-                    type: 'START_GAME'
-                });
-                startCountdown();
+        // Check if both players are ready and auto-start countdown
+        function checkBothReadyAndStart() {
+            if (gameState.isReady && gameState.opponentReady && gameState.guestUid) {
+                // Both ready! Auto start after brief delay
+                if (gameState.isHost) {
+                    db.collection('rooms').doc(currentRoom).update({ status: 'playing' }).catch(() => {});
+                    sendPeerMessage({ type: 'START_GAME' });
+                    startCountdown();
+                }
+                // Guest waits for START_GAME message from host
             }
-        });
+        }
 
         // Connect to peer
         function connectToPeer(peerId) {
@@ -1995,6 +2007,13 @@
                     gameState.gameActive = false;
                     alert('상대방과의 연결이 끊어졌습니다.');
                     goHome();
+                } else if (currentRoom) {
+                    // Not in game - opponent left the room
+                    gameState.guestUid = null;
+                    gameState.guestName = null;
+                    gameState.guestPhoto = null;
+                    gameState.opponentReady = false;
+                    showRoomWaiting();
                 }
             });
         }
@@ -2016,6 +2035,8 @@
                 case 'READY_STATUS':
                     gameState.opponentReady = data.ready;
                     showRoomWaiting();
+                    // Check if both ready → auto start
+                    checkBothReadyAndStart();
                     break;
                 case 'START_GAME':
                     startCountdown();
@@ -2035,6 +2056,28 @@
                 case 'KICKED':
                     alert('방장이 당신을 강제퇴장했습니다.');
                     goHome();
+                    break;
+                case 'HOST_TRANSFER':
+                    // Guest becomes the new host
+                    gameState.isHost = true;
+                    gameState.hostUid = currentUser.uid;
+                    gameState.hostName = currentUser.displayName;
+                    gameState.hostPhoto = currentUser.photoURL;
+                    gameState.guestUid = null;
+                    gameState.guestName = null;
+                    gameState.guestPhoto = null;
+                    gameState.opponentReady = false;
+                    gameState.isReady = false;
+                    alert('방장이 나갔습니다. 당신이 새 방장이 되었습니다!');
+                    showRoomWaiting();
+                    break;
+                case 'GUEST_LEFT':
+                    // Guest left the room
+                    gameState.guestUid = null;
+                    gameState.guestName = null;
+                    gameState.guestPhoto = null;
+                    gameState.opponentReady = false;
+                    showRoomWaiting();
                     break;
                 case 'CHAT':
                     console.log('Message:', data.message);
@@ -2359,36 +2402,55 @@
             loadUserStats();
         }
 
-        // Back button
+        // Back button - handles host leaving (transfer to guest) or guest leaving
         backBtn.addEventListener('click', async () => {
-            if (gameState.isHost) {
-                try {
-                    await db.collection('rooms').doc(currentRoom).delete();
-                } catch (error) {
-                    console.log('Error deleting room:', error);
-                }
-            } else {
-                try {
-                    const roomRef = db.collection('rooms').doc(currentRoom);
-                    const roomDoc = await roomRef.get();
-                    if (roomDoc.exists) {
+            if (!currentRoom) { goHome(); return; }
+
+            try {
+                const roomRef = db.collection('rooms').doc(currentRoom);
+                const roomDoc = await roomRef.get();
+
+                if (!roomDoc.exists) { goHome(); return; }
+                const roomData = roomDoc.data();
+
+                if (gameState.isHost) {
+                    // Host is leaving
+                    if (roomData.guestUid) {
+                        // Guest exists → transfer host to guest
+                        sendPeerMessage({ type: 'HOST_TRANSFER' });
                         await roomRef.update({
-                            playerCount: 1,
+                            hostUid: roomData.guestUid,
+                            hostName: roomData.guestName || '사용자',
+                            hostPhoto: roomData.guestPhoto || '',
+                            hostChar: roomData.guestChar || '',
                             guestUid: firebase.firestore.FieldValue.delete(),
                             guestName: firebase.firestore.FieldValue.delete(),
                             guestPhoto: firebase.firestore.FieldValue.delete(),
-                            guestChar: firebase.firestore.FieldValue.delete()
+                            guestChar: firebase.firestore.FieldValue.delete(),
+                            playerCount: 1,
+                            status: 'waiting'
                         });
+                    } else {
+                        // No guest → delete room
+                        await roomRef.delete();
                     }
-                } catch (error) {
-                    console.log('Error updating room:', error);
+                } else {
+                    // Guest is leaving
+                    await roomRef.update({
+                        playerCount: 1,
+                        status: 'waiting',
+                        guestUid: firebase.firestore.FieldValue.delete(),
+                        guestName: firebase.firestore.FieldValue.delete(),
+                        guestPhoto: firebase.firestore.FieldValue.delete(),
+                        guestChar: firebase.firestore.FieldValue.delete()
+                    });
+                    sendPeerMessage({ type: 'GUEST_LEFT' });
                 }
+            } catch (error) {
+                console.log('Error handling room leave:', error);
             }
 
-            if (dataConnection) {
-                dataConnection.close();
-            }
-
+            if (dataConnection) { dataConnection.close(); }
             goHome();
         });
 
@@ -2430,14 +2492,44 @@
             });
         });
 
-        // Handle beforeunload
-        window.addEventListener('beforeunload', async () => {
-            if (currentRoom && gameState.isHost) {
-                try {
-                    await db.collection('rooms').doc(currentRoom).delete();
-                } catch (error) {
-                    console.log('Error deleting room:', error);
-                }
+        // Handle beforeunload - clean up room on page close
+        window.addEventListener('beforeunload', () => {
+            if (!currentRoom) return;
+            // Use sendBeacon for reliable cleanup
+            const roomRef = db.collection('rooms').doc(currentRoom);
+            if (gameState.isHost) {
+                // If guest exists, transfer host; otherwise delete
+                // Note: sendBeacon can't do complex logic, so we mark room for cleanup
+                navigator.sendBeacon && navigator.sendBeacon('about:blank'); // trigger
+                roomRef.get().then(doc => {
+                    if (!doc.exists) return;
+                    const data = doc.data();
+                    if (data.guestUid) {
+                        roomRef.update({
+                            hostUid: data.guestUid,
+                            hostName: data.guestName || '사용자',
+                            hostPhoto: data.guestPhoto || '',
+                            hostChar: data.guestChar || '',
+                            guestUid: firebase.firestore.FieldValue.delete(),
+                            guestName: firebase.firestore.FieldValue.delete(),
+                            guestPhoto: firebase.firestore.FieldValue.delete(),
+                            guestChar: firebase.firestore.FieldValue.delete(),
+                            playerCount: 1,
+                            status: 'waiting'
+                        });
+                    } else {
+                        roomRef.delete();
+                    }
+                });
+            } else {
+                roomRef.update({
+                    playerCount: 1,
+                    status: 'waiting',
+                    guestUid: firebase.firestore.FieldValue.delete(),
+                    guestName: firebase.firestore.FieldValue.delete(),
+                    guestPhoto: firebase.firestore.FieldValue.delete(),
+                    guestChar: firebase.firestore.FieldValue.delete()
+                }).catch(() => {});
             }
         });
 
