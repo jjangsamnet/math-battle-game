@@ -90,6 +90,16 @@
             transform: translateY(-2px);
         }
 
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+        }
+
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: #a78bfa;
@@ -203,6 +213,7 @@
             border-radius: 10px;
             border: 1px solid rgba(124, 58, 237, 0.3);
             padding: 10px;
+            margin-bottom: 30px;
         }
 
         table {
@@ -248,6 +259,20 @@
             padding: 5px 10px;
             font-size: 11px;
             white-space: nowrap;
+        }
+
+        .section-title {
+            color: #a78bfa;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
         }
 
         .modal {
@@ -451,6 +476,15 @@
             .modal-content {
                 width: 95%;
             }
+
+            .nav-tabs {
+                gap: 5px;
+            }
+
+            .nav-tab {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -468,13 +502,63 @@
         </header>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('members')">회원 관리</button>
+            <button class="nav-tab active" onclick="switchTab('teachers')">👨‍🏫 교사 인증</button>
+            <button class="nav-tab" onclick="switchTab('members')">회원 관리</button>
             <button class="nav-tab" onclick="switchTab('stats')">전체 통계</button>
             <button class="nav-tab" onclick="switchTab('access')">접속 현황</button>
         </div>
 
+        <!-- Teacher Approval Tab -->
+        <div id="teachers" class="tab-content active">
+            <!-- Pending Teachers Section -->
+            <h2 class="section-title">⏳ 인증 대기 교사</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>닉네임</th>
+                            <th>이메일</th>
+                            <th>소속학교</th>
+                            <th>학년/반</th>
+                            <th>가입일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTeachersBody">
+                        <tr class="loading">
+                            <td colspan="6"><div class="spinner"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Approved Teachers Section -->
+            <h2 class="section-title">✅ 승인된 교사 목록</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>닉네임</th>
+                            <th>이메일</th>
+                            <th>소속학교</th>
+                            <th>학년/반</th>
+                            <th>포인트</th>
+                            <th>게임수</th>
+                            <th>마지막 접속</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvedTeachersBody">
+                        <tr class="loading">
+                            <td colspan="8"><div class="spinner"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Members Tab -->
-        <div id="members" class="tab-content active">
+        <div id="members" class="tab-content">
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="닉네임 또는 이메일로 검색...">
                 <select id="sortBy" style="padding: 10px 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid #7c3aed; border-radius: 6px; color: #e0e0e0;">
@@ -515,6 +599,10 @@
                 <div class="stat-card">
                     <h3>전체 회원수</h3>
                     <div class="value" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>교사 수</h3>
+                    <div class="value" id="totalTeachers">0</div>
                 </div>
                 <div class="stat-card">
                     <h3>총 게임 횟수</h3>
@@ -681,6 +769,8 @@
         let allUsers = [];
         let currentSortBy = 'nickname';
         let currentModalUser = null;
+        let pendingTeachersUnsubscribe = null;
+        let approvedTeachersUnsubscribe = null;
 
         // Initialize
         firebase.auth().onAuthStateChanged(async (user) => {
@@ -702,6 +792,7 @@
             loadUsers();
             loadStats();
             loadAccessLog();
+            loadTeachers();
         });
 
         function showGoogleLogin() {
@@ -730,6 +821,132 @@
             `;
         }
 
+        // ═══ TEACHER APPROVAL FUNCTIONS ═══
+        function loadTeachers() {
+            loadPendingTeachers();
+            loadApprovedTeachers();
+        }
+
+        function loadPendingTeachers() {
+            if (pendingTeachersUnsubscribe) {
+                pendingTeachersUnsubscribe();
+            }
+
+            pendingTeachersUnsubscribe = db.collection('users')
+                .where('role', '==', 'teacher')
+                .where('approved', '==', false)
+                .onSnapshot(snapshot => {
+                    const tbody = document.getElementById('pendingTeachersBody');
+                    if (snapshot.empty) {
+                        tbody.innerHTML = '<tr class="empty-state"><td colspan="6">대기 중인 교사가 없습니다</td></tr>';
+                        return;
+                    }
+
+                    const teachers = [];
+                    snapshot.forEach(doc => {
+                        teachers.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    tbody.innerHTML = teachers.map(teacher => `
+                        <tr>
+                            <td><strong>${teacher.nickname || '(미설정)'}</strong></td>
+                            <td>${teacher.email}</td>
+                            <td>${teacher.school || '-'}</td>
+                            <td>${teacher.gradeClass || '-'}</td>
+                            <td class="timestamp">${formatDate(teacher.createdAt)}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn-action btn-success" onclick="approveTeacher('${teacher.id}')">승인</button>
+                                    <button class="btn-action btn-danger" onclick="denyTeacher('${teacher.id}')">거부</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }, error => {
+                    console.error('Error loading pending teachers:', error);
+                });
+        }
+
+        function loadApprovedTeachers() {
+            if (approvedTeachersUnsubscribe) {
+                approvedTeachersUnsubscribe();
+            }
+
+            approvedTeachersUnsubscribe = db.collection('users')
+                .where('role', '==', 'teacher')
+                .where('approved', '==', true)
+                .onSnapshot(snapshot => {
+                    const tbody = document.getElementById('approvedTeachersBody');
+                    if (snapshot.empty) {
+                        tbody.innerHTML = '<tr class="empty-state"><td colspan="8">승인된 교사가 없습니다</td></tr>';
+                        return;
+                    }
+
+                    const teachers = [];
+                    snapshot.forEach(doc => {
+                        teachers.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    tbody.innerHTML = teachers.map(teacher => `
+                        <tr>
+                            <td><strong>${teacher.nickname || '(미설정)'}</strong></td>
+                            <td>${teacher.email}</td>
+                            <td>${teacher.school || '-'}</td>
+                            <td>${teacher.gradeClass || '-'}</td>
+                            <td><strong style="color: #a78bfa;">${teacher.points || 0}</strong></td>
+                            <td>${teacher.gamesPlayed || 0}</td>
+                            <td class="timestamp">${formatTime(teacher.lastLogin)}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn-action btn-danger" onclick="revokeTeacher('${teacher.id}')">승인 취소</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }, error => {
+                    console.error('Error loading approved teachers:', error);
+                });
+        }
+
+        async function approveTeacher(teacherId) {
+            try {
+                await db.collection('users').doc(teacherId).update({
+                    approved: true,
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('교사가 승인되었습니다');
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        async function denyTeacher(teacherId) {
+            if (!confirm('정말 이 교사의 가입을 거부하시겠습니까?')) {
+                return;
+            }
+            try {
+                await db.collection('users').doc(teacherId).delete();
+                alert('가입이 거부되었습니다');
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        async function revokeTeacher(teacherId) {
+            if (!confirm('이 교사의 승인을 취소하시겠습니까?')) {
+                return;
+            }
+            try {
+                await db.collection('users').doc(teacherId).update({
+                    approved: false
+                });
+                alert('교사 승인이 취소되었습니다');
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        // ═══ MEMBERS FUNCTIONS ═══
         async function loadUsers() {
             try {
                 const snapshot = await db.collection('users').get();
@@ -794,10 +1011,12 @@
             `).join('');
         }
 
+        // ═══ STATS FUNCTIONS ═══
         async function loadStats() {
             try {
                 const snapshot = await db.collection('users').get();
                 let totalUsers = 0;
+                let totalTeachers = 0;
                 let totalGames = 0;
                 let totalPoints = 0;
                 let mostActiveUser = null;
@@ -806,6 +1025,9 @@
                 snapshot.forEach(doc => {
                     const user = doc.data();
                     totalUsers++;
+                    if (user.role === 'teacher' && user.approved) {
+                        totalTeachers++;
+                    }
                     totalGames += user.gamesPlayed || 0;
                     totalPoints += user.points || 0;
 
@@ -816,6 +1038,7 @@
                 });
 
                 document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('totalTeachers').textContent = totalTeachers;
                 document.getElementById('totalGames').textContent = totalGames;
                 document.getElementById('avgPoints').textContent = Math.round(totalPoints / (totalUsers || 1));
                 document.getElementById('mostActive').textContent = mostActiveUser || '-';
@@ -841,6 +1064,7 @@
             }
         }
 
+        // ═══ ACCESS LOG FUNCTIONS ═══
         async function loadAccessLog() {
             const tbody = document.getElementById('accessBody');
             try {
@@ -897,6 +1121,7 @@
             return date.toLocaleDateString('ko-KR');
         }
 
+        // ═══ MODAL FUNCTIONS ═══
         function openPointsModal(userId, currentPoints, nickname) {
             currentModalUser = { id: userId, nickname };
             document.getElementById('currentPoints').value = currentPoints;

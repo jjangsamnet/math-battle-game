@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수학 배틀 - 뺄셈의 제왕</title>
+    <title>수학배틀 - 연산의 달인이 되어라!</title>
     <style>
         * {
             margin: 0;
@@ -72,6 +72,7 @@
             height: 100%;
             padding: 20px;
             text-align: center;
+            overflow-y: auto;
         }
 
         .logo {
@@ -105,6 +106,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-bottom: 12px;
         }
 
         .google-login-btn:hover {
@@ -125,6 +127,87 @@
             font-size: 12px;
         }
 
+        .role-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .role-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .teacher-form, .student-access {
+            display: none;
+            flex-direction: column;
+        }
+
+        .teacher-form.active, .student-access.active {
+            display: flex;
+        }
+
+        .form-back-btn {
+            background: #E8E8E8;
+            color: #333;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            transition: background 0.3s ease;
+        }
+
+        .form-back-btn:hover {
+            background: #D0D0D0;
+        }
+
+        .approval-waiting {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .approval-waiting.active {
+            display: flex;
+        }
+
+        .approval-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .approval-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .approval-message {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
         /* Home Screen */
         #homeScreen {
             display: none;
@@ -139,6 +222,12 @@
             padding: 20px;
             flex-shrink: 0;
             border-radius: 0 0 20px 20px;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
         }
 
         .user-info {
@@ -201,6 +290,37 @@
             font-weight: bold;
             color: #333;
             margin: 20px 0 12px 0;
+        }
+
+        .class-management {
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background: #F0F4FF;
+        }
+
+        .class-management-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .class-management-btn {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .class-management-btn:hover {
+            background: #5568d3;
         }
 
         .game-modes {
@@ -484,7 +604,7 @@
             color: #333;
         }
 
-        .room-input, .join-input, .password-input {
+        .room-input, .join-input, .password-input, .class-code-input {
             padding: 10px 12px;
             border: 1px solid #DDD;
             border-radius: 6px;
@@ -492,7 +612,7 @@
             font-family: 'Noto Sans KR', sans-serif;
         }
 
-        .room-input:focus, .join-input:focus, .password-input:focus {
+        .room-input:focus, .join-input:focus, .password-input:focus, .class-code-input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -529,7 +649,47 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .create-room-btn, .join-room-btn, .start-game-btn, .surrender-btn {
+        .operations-select {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .operation-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .operation-checkbox input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .operation-checkbox:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        .operation-checkbox input:checked + label {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .operation-checkbox label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .create-room-btn, .join-room-btn, .start-game-btn, .surrender-btn, .class-code-btn, .create-class-btn {
             padding: 12px;
             background: #667eea;
             color: white;
@@ -541,7 +701,7 @@
             transition: all 0.3s ease;
         }
 
-        .create-room-btn:hover, .start-game-btn:hover {
+        .create-room-btn:hover, .start-game-btn:hover, .create-class-btn:hover {
             background: #5568d3;
         }
 
@@ -550,11 +710,11 @@
             cursor: not-allowed;
         }
 
-        .join-room-btn {
+        .join-room-btn, .class-code-btn {
             background: #667eea;
         }
 
-        .join-room-btn:hover {
+        .join-room-btn:hover, .class-code-btn:hover {
             background: #5568d3;
         }
 
@@ -940,6 +1100,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .modal.active {
@@ -953,6 +1114,7 @@
             max-width: 400px;
             width: 100%;
             text-align: center;
+            margin: auto;
         }
 
         .modal-title {
@@ -1060,6 +1222,29 @@
             color: #FF6B6B;
         }
 
+        .class-code-display {
+            background: #f0f0f0;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .class-code-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .class-code-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .container {
@@ -1088,202 +1273,200 @@
         <!-- Loading Screen -->
         <div id="loadingScreen">
             <div class="spinner"></div>
-            <p>로딩 중...</p>
+            <p style="margin-top: 20px;">로딩 중...</p>
         </div>
 
         <!-- Login Screen -->
         <div id="loginScreen">
-            <div class="logo">🎮</div>
-            <div class="title">수학 배틀</div>
-            <div style="font-size:18px;color:#FFD700;font-weight:bold;margin-bottom:8px;">👑 뺄셈의 제왕 👑</div>
-            <div class="subtitle">뺄셈 실력으로 상대를 쓰러뜨려라!</div>
-            <button class="google-login-btn" id="googleLoginBtn">
+            <div class="logo">🧮</div>
+            <div class="title">수학배틀</div>
+            <div class="subtitle">연산의 달인이 되어라!</div>
+
+            <button id="googleLoginBtn" class="google-login-btn">
                 <div class="google-logo">G</div>
                 Google로 로그인
             </button>
+
+            <div id="roleSelection" class="role-selection" style="display: none;">
+                <button id="teacherRoleBtn" class="role-btn">👨‍🏫 교사로 가입</button>
+                <button id="studentRoleBtn" class="role-btn">👨‍🎓 학생으로 접속</button>
+            </div>
+
+            <form id="teacherForm" class="teacher-form">
+                <button type="button" class="form-back-btn">← 돌아가기</button>
+                <h3 style="margin-bottom: 16px; color: #333;">교사 회원가입</h3>
+
+                <div class="input-group">
+                    <label class="input-label required-label">소속학교</label>
+                    <input type="text" id="teacherSchool" class="room-input" placeholder="예: OO초등학교" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label required-label">학년/반</label>
+                    <input type="text" id="teacherGradeClass" class="room-input" placeholder="예: 3학년 2반" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label required-label">닉네임</label>
+                    <input type="text" id="teacherNickname" class="room-input" placeholder="예: 김선생님" required>
+                </div>
+
+                <button type="submit" class="create-class-btn" style="width: 100%; margin-top: 16px;">가입하기</button>
+            </form>
+
+            <div id="studentAccess" class="student-access">
+                <button type="button" class="form-back-btn">← 돌아가기</button>
+                <h3 style="margin-bottom: 20px; color: #333;">학생 접속</h3>
+
+                <div id="studentAccessOptions">
+                    <button class="role-btn" id="classCodeAccessBtn" style="margin-bottom: 12px;">반 코드로 입장</button>
+                    <button class="role-btn" id="googleStudentLoginBtn">Google로 로그인</button>
+                </div>
+
+                <form id="classCodeForm" style="display: none;">
+                    <div class="input-group">
+                        <label class="input-label required-label">반 코드</label>
+                        <input type="text" id="studentClassCode" class="class-code-input" placeholder="6자리 코드 입력" maxlength="6" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required-label">이름</label>
+                        <input type="text" id="studentName" class="room-input" placeholder="이름 입력" required>
+                    </div>
+
+                    <button type="submit" class="class-code-btn" style="width: 100%;">입장하기</button>
+                    <button type="button" class="form-back-btn" style="width: 100%; margin-top: 8px;">취소</button>
+                </form>
+            </div>
+
+            <div id="approvalWaiting" class="approval-waiting">
+                <div class="approval-icon">⏳</div>
+                <div class="approval-title">인증 대기 중입니다</div>
+                <div class="approval-message">관리자 인증 후 이용 가능합니다.<br>잠시만 기다려주세요.</div>
+                <button class="form-back-btn" id="approvalLogoutBtn" style="width: 100%; margin-top: 20px;">로그아웃</button>
+            </div>
         </div>
 
         <!-- Home Screen -->
         <div id="homeScreen">
             <div class="header">
+                <div class="header-title" id="headerTitle">수학배틀</div>
                 <div class="user-info">
-                    <img id="userAvatar" class="user-avatar" src="" alt="프로필" onclick="showProfileModal()" style="cursor:pointer;border:2px solid rgba(255,255,255,0.5);transition:all 0.2s;" onmouseover="this.style.borderColor='#FFD700';this.style.transform='scale(1.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.5)';this.style.transform='scale(1)'">
+                    <img id="userAvatar" class="user-avatar" alt="프로필">
                     <div>
-                        <div class="user-name" id="userName">사용자</div>
-                        <div style="font-size:11px;opacity:0.7;cursor:pointer;" onclick="showProfileModal()">프로필 수정 ✏️</div>
+                        <div class="user-name" id="userName"></div>
+                        <div class="user-stats">
+                            <div class="stat-item" id="userRole"></div>
+                            <div class="stat-item" id="userSchool" style="display: none;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="user-stats">
-                    <div class="stat-item">포인트: <span id="userPoints">0</span></div>
-                    <div class="stat-item">게임: <span id="userGames">0</span>/<span id="userWins">0</span></div>
-                </div>
-                <a href="admin.html" id="adminLink" class="admin-link hidden">🔧 관리자 패널</a>
+                <a href="admin.html" class="admin-link hidden" id="adminLink">관리자 패널</a>
             </div>
 
             <div class="main-content">
-                <div style="text-align:center;padding:8px;margin-bottom:4px;">
-                    <span style="font-size:20px;font-weight:900;color:#5C4B99;">👑 뺄셈의 제왕 👑</span>
-                </div>
-                <div class="section-title">게임 모드 선택</div>
-                <div class="game-modes">
-                    <button class="game-mode-btn" data-mode="speed">
-                        <div class="mode-icon">⚡</div>
-                        <div class="mode-name">스피드 모드</div>
-                        <div class="mode-desc">50초 안에 뺄셈을 가장 많이 풀기</div>
-                    </button>
-                    <button class="game-mode-btn" data-mode="survival">
-                        <div class="mode-icon">🛡️</div>
-                        <div class="mode-name">서바이벌 모드</div>
-                        <div class="mode-desc">뺄셈으로 상대 생명을 빼앗아라! (생명 10개)</div>
-                    </button>
-                    <button class="game-mode-btn" data-mode="boss">
-                        <div class="mode-icon">🐉</div>
-                        <div class="mode-name">보스 모드</div>
-                        <div class="mode-desc">함께 뺄셈을 풀어 보스를 물리쳐라!</div>
-                    </button>
+                <!-- Class Management Section (Teachers Only) -->
+                <div id="classManagementSection" style="display: none;">
+                    <div class="class-management">
+                        <div class="class-management-title">📚 내 반 관리</div>
+                        <button id="createClassBtn" class="class-management-btn">반 개설</button>
+                    </div>
                 </div>
 
-                <div class="section-title">🎮 게임 방 목록</div>
-                <div class="public-rooms-container" id="publicRoomsContainer">
-                    <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
+                <!-- Game Modes -->
+                <div class="section-title">🎮 게임 시작</div>
+                <div class="game-modes" id="gameModes"></div>
+
+                <!-- Public Rooms -->
+                <div class="section-title">🌍 공개 방</div>
+                <div class="public-rooms-container">
+                    <div class="rooms-grid" id="roomsList"></div>
                 </div>
 
-                <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span>🏆 실시간 랭킹</span>
-                    <span onclick="showFullRanking()" style="font-size:12px;color:#667eea;cursor:pointer;font-weight:normal;">전체 순위 보기 →</span>
-                </div>
-                <div class="ranking-container" id="rankingContainer" style="background:linear-gradient(135deg,#f8f6ff,#eef0ff);border-radius:12px;padding:12px;border:2px solid #ddd8f0;">
-                    <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
+                <!-- Ranking -->
+                <div class="section-title">🏆 랭킹</div>
+                <div class="ranking-container">
+                    <div class="ranking-list" id="rankingList"></div>
+                    <button style="width: 100%; padding: 10px; margin-top: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;" id="fullRankingBtn">전체 랭킹 보기</button>
                 </div>
             </div>
 
-            <button class="logout-btn" id="logoutBtn">로그아웃</button>
-        </div>
-
-        <!-- Full Ranking Modal -->
-        <div class="modal" id="rankingModal">
-            <div style="background:white;border-radius:20px;max-width:420px;width:90%;max-height:80vh;margin:auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
-                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:20px;text-align:center;">
-                    <div style="font-size:28px;">🏆</div>
-                    <div style="font-size:20px;font-weight:900;">전체 랭킹</div>
-                    <div style="font-size:12px;opacity:0.8;">뺄셈의 제왕 포인트 순위</div>
-                </div>
-                <div id="fullRankingList" style="padding:12px;overflow-y:auto;max-height:55vh;"></div>
-                <div style="padding:12px;text-align:center;">
-                    <button onclick="closeFullRanking()" style="padding:10px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">닫기</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Profile Edit Modal -->
-        <div class="modal" id="profileModal">
-            <div style="background:white;border-radius:20px;max-width:400px;width:90%;margin:auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
-                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:24px;text-align:center;">
-                    <img id="profileModalAvatar" src="" style="width:64px;height:64px;border-radius:50%;border:3px solid white;object-fit:cover;margin-bottom:8px;">
-                    <div style="font-size:18px;font-weight:900;">개인정보 수정</div>
-                    <div id="profileModalEmail" style="font-size:12px;opacity:0.75;margin-top:4px;"></div>
-                </div>
-                <div style="padding:20px;">
-                    <div style="margin-bottom:16px;">
-                        <label style="font-weight:700;font-size:13px;color:#555;display:block;margin-bottom:6px;">닉네임</label>
-                        <input type="text" id="profileNickname" maxlength="12" placeholder="게임에서 표시될 이름" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;outline:none;text-align:center;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#ddd'">
-                    </div>
-                    <div style="background:#f8f6ff;border-radius:10px;padding:12px;margin-bottom:16px;">
-                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px;">
-                            <span>🏆 포인트</span><span id="profilePoints" style="font-weight:700;color:#667eea;">0</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px;">
-                            <span>🎮 게임 수</span><span id="profileGames" style="font-weight:700;">0</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;">
-                            <span>🏅 승리 수</span><span id="profileWins" style="font-weight:700;">0</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:10px;">
-                        <button onclick="closeProfileModal()" style="flex:1;padding:12px;background:#e9ecef;color:#495057;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">취소</button>
-                        <button onclick="saveProfile()" style="flex:1;padding:12px;background:#667eea;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">저장</button>
-                    </div>
-                </div>
-            </div>
+            <button class="logout-btn">로그아웃</button>
         </div>
 
         <!-- Room Screen -->
         <div id="roomScreen">
-            <button class="back-btn" id="backBtn">← 돌아가기</button>
+            <button class="back-btn">← 돌아가기</button>
 
-            <div id="roomSetup">
-                <div class="section-title" style="margin-top: 0;">게임 모드 선택</div>
+            <!-- Room Setup -->
+            <div id="roomSetup" class="active">
                 <div id="modeDisplay" style="background: #F5F5F5; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 32px; margin-bottom: 10px;" id="modeIconDisplay"></div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333;" id="modeNameDisplay"></div>
+                    <div style="font-size: 24px; margin-bottom: 8px;" id="modeIcon"></div>
+                    <div style="font-weight: bold; color: #333; font-size: 16px;" id="modeName"></div>
                 </div>
 
-                <div class="section-title">방 이름</div>
                 <div class="input-group">
                     <label class="input-label required-label">방 이름</label>
-                    <input type="text" class="room-name-input" id="newRoomName" placeholder="예: 3학년 2반 대결" maxlength="50">
+                    <input type="text" class="room-name-input" id="roomNameInput" placeholder="방 이름 입력" required>
                 </div>
 
-                <div class="section-title">캐릭터 선택</div>
-                <div class="character-select" id="characterSelect"></div>
-
                 <div id="accessCodeSection">
-                    <div class="section-title">접속 코드 (선택사항)</div>
-                    <div class="input-group" style="margin-bottom: 20px;">
-                        <label class="input-label">접속 코드</label>
-                        <input type="text" class="password-input" id="accessCode" placeholder="4자리 코드 (선택사항)" maxlength="4">
+                    <div class="input-group">
+                        <label class="input-label">비밀번호 (선택)</label>
+                        <input type="password" class="password-input" id="roomPasswordInput" placeholder="비밀번호 (없으면 공개방)">
                     </div>
                 </div>
 
-                <button class="create-room-btn" id="createRoomBtn">방 만들기</button>
+                <div class="input-group">
+                    <label class="input-label required-label">캐릭터 선택</label>
+                    <div class="character-select" id="characterSelect"></div>
+                </div>
+
+                <button id="createRoomBtn" class="create-room-btn">방 만들기</button>
             </div>
 
-            <!-- Room Waiting Screen -->
+            <!-- Room Waiting -->
             <div id="roomWaiting">
-                <div class="waiting-title">게임 준비 중</div>
+                <div class="waiting-title">게임 대기</div>
 
                 <div class="room-info-box">
                     <div class="room-info-title">방 정보</div>
                     <div class="room-info-content">
-                        <span id="waitingRoomName">-</span>
-                        <span id="waitingRoomMode">-</span>
+                        <span id="waitingRoomName"></span>
+                    </div>
+                    <div class="room-info-content" style="margin-top: 8px;">
+                        <span>게임 모드</span>
+                        <span id="waitingRoomMode"></span>
                     </div>
                 </div>
 
                 <div class="player-section">
-                    <div class="player-section-title">호스트</div>
+                    <div class="player-section-title">방장</div>
                     <div class="player-card">
                         <div class="player-info">
-                            <img id="hostAvatar" class="player-avatar" src="" alt="호스트">
+                            <img id="hostAvatar" class="player-avatar" alt="방장">
                             <div class="player-name-char">
-                                <div class="player-name" id="hostName">-</div>
-                                <div class="player-char" id="hostChar">-</div>
+                                <div class="player-name" id="hostName"></div>
+                                <div class="player-char" id="hostChar"></div>
                             </div>
                         </div>
-                        <div id="hostActions" style="display: flex; gap: 8px;"></div>
-                        <div class="player-status ready" id="hostStatus">준비 완료</div>
+                        <div class="player-status ready">방장</div>
                     </div>
                 </div>
 
                 <div class="player-section">
-                    <div class="player-section-title">게스트</div>
-                    <div id="guestSection">
-                        <div style="padding: 20px; text-align: center; color: #999;">게스트 대기 중...</div>
-                    </div>
+                    <div class="player-section-title">참가자</div>
+                    <div id="guestSection"></div>
                 </div>
 
-                <div id="readyButtonSection" style="margin-top: auto; display: none;">
-                    <button class="not-ready-btn" id="readyBtn">준비 완료</button>
+                <div id="readyButtonSection" style="margin-top: auto;">
+                    <button id="readyBtn" class="not-ready-btn" style="width: 100%;">✅ 준비 완료</button>
                 </div>
 
-                <div id="waitingMessageSection" class="waiting-message" style="display: none; margin-top: auto;">
-                    상대방을 기다리는 중...
-                </div>
-
-                <button class="start-game-btn" id="startGameBtn" style="margin-top: auto; display: none;">게임 시작</button>
+                <div id="waitingMessageSection"></div>
             </div>
 
-            <!-- Countdown Screen -->
+            <!-- Countdown -->
             <div id="countdown">
                 <div class="countdown-number" id="countdownNumber">3</div>
             </div>
@@ -1292,69 +1475,61 @@
             <div id="gameScreen">
                 <div class="game-header">
                     <div class="player-header">
-                        <img id="player1Avatar" class="player-header-avatar" src="" alt="플레이어">
-                        <div class="player-header-name" id="player1Name">-</div>
-                        <div class="timer" id="player1Score">0</div>
+                        <img id="player1Avatar" class="player-header-avatar" alt="플레이어 1">
+                        <div class="player-header-name" id="player1Name"></div>
+                        <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 4px;" id="player1Score">0</div>
+                        <div id="survivalHealthSection" style="display: none;">
+                            <div class="health-bar" id="player1Health"></div>
+                        </div>
                     </div>
-                    <div class="timer" id="gameTimer">50</div>
+
+                    <div class="timer" id="timer">50</div>
+
                     <div class="player-header">
-                        <img id="player2Avatar" class="player-header-avatar" src="" alt="플레이어">
-                        <div class="player-header-name" id="player2Name">-</div>
-                        <div class="timer" id="player2Score">0</div>
-                    </div>
-                </div>
-
-                <div id="survivalHealthSection" style="display: none; text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px;">체력</div>
-                    <div style="display: flex; justify-content: space-around;">
-                        <div>
-                            <div class="health-bar" id="player1Health">❤️×10</div>
-                            <div style="font-size: 12px; color: #666;">내 체력</div>
-                        </div>
-                        <div>
-                            <div class="health-bar" id="player2Health">❤️×10</div>
-                            <div style="font-size: 12px; color: #666;">상대 체력</div>
+                        <img id="player2Avatar" class="player-header-avatar" alt="플레이어 2">
+                        <div class="player-header-name" id="player2Name"></div>
+                        <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 4px;" id="player2Score">0</div>
+                        <div id="survivalHealthSection" style="display: none;">
+                            <div class="health-bar" id="player2Health"></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="bossHealthSection" style="display: none; text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px;">보스 체력</div>
-                    <div class="health-bar" id="bossHealth" style="justify-content: center;">🐉 HP ×10</div>
+                <div id="bossHealthSection" style="display: none;">
+                    <div style="text-align: center; font-size: 14px; font-weight: bold; color: #666; margin-bottom: 8px;">보스 체력</div>
+                    <div class="health-bar" id="bossHealth" style="justify-content: center;"></div>
                 </div>
 
                 <div class="question-area">
-                    <div class="question-text" id="questionText">로딩 중...</div>
-                    <input type="text" class="answer-input" id="answerInput" placeholder="답을 입력하세요" inputmode="numeric" autofocus>
+                    <div class="question-text" id="questionText">?</div>
+                    <input type="text" class="answer-input" id="answerInput" placeholder="답 입력" inputmode="numeric">
                 </div>
 
                 <div class="game-footer">
-                    <button class="surrender-btn" id="surrenderBtn">기권</button>
+                    <button id="surrenderBtn" class="surrender-btn">항복</button>
                 </div>
             </div>
 
-            <!-- Game End Screen -->
+            <!-- Game End -->
             <div id="gameEnd">
                 <div class="game-end-content">
                     <div class="result-emoji" id="resultEmoji">🎉</div>
-                    <div class="game-result" id="gameResult">승리!</div>
-
+                    <div class="game-result" id="resultText">승리!</div>
                     <div class="result-stats">
                         <div class="result-stat-row">
-                            <span class="result-stat-label">내 점수:</span>
+                            <span class="result-stat-label">내 점수</span>
                             <span class="result-stat-value" id="myFinalScore">0</span>
                         </div>
                         <div class="result-stat-row">
-                            <span class="result-stat-label">상대 점수:</span>
+                            <span class="result-stat-label">상대 점수</span>
                             <span class="result-stat-value" id="opponentFinalScore">0</span>
                         </div>
-                        <div id="pointsEarnedRow" class="result-stat-row">
-                            <span class="result-stat-label">획득 포인트:</span>
-                            <span class="result-stat-value" id="pointsEarned">+50</span>
+                        <div class="result-stat-row">
+                            <span class="result-stat-label">획득 포인트</span>
+                            <span class="result-stat-value" id="pointsEarnedRow">+10</span>
                         </div>
                     </div>
-
-                    <button class="back-home-btn" id="backHomeBtn">홈 화면으로</button>
+                    <button id="backHomeBtn" class="back-home-btn">홈으로</button>
                 </div>
             </div>
         </div>
@@ -1362,24 +1537,12 @@
         <!-- Password Modal -->
         <div id="passwordModal" class="modal">
             <div class="modal-content">
-                <div class="modal-title">접속 코드 입력</div>
-                <div class="modal-description">이 방에 입장하기 위한 접속 코드를 입력하세요.</div>
-                <input type="text" class="password-input" id="modalPasswordInput" placeholder="4자리 코드" maxlength="4" inputmode="numeric">
+                <div class="modal-title">비밀번호 입력</div>
+                <div class="modal-description">이 방은 비밀번호로 보호되어 있습니다.</div>
+                <input type="password" id="passwordInput" class="password-input" placeholder="비밀번호 입력">
                 <div class="modal-buttons">
-                    <button class="modal-btn secondary" id="passwordCancelBtn">취소</button>
-                    <button class="modal-btn primary" id="passwordSubmitBtn">입장</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Kick Modal -->
-        <div id="kickModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-title">강퇴 확인</div>
-                <div class="modal-description">정말로 상대방을 방에서 제거하시겠습니까?</div>
-                <div class="modal-buttons">
-                    <button class="modal-btn secondary" id="kickCancelBtn">취소</button>
-                    <button class="modal-btn primary" id="kickConfirmBtn">강퇴</button>
+                    <button id="passwordSubmitBtn" class="modal-btn primary">입장</button>
+                    <button id="passwordCancelBtn" class="modal-btn secondary">취소</button>
                 </div>
             </div>
         </div>
@@ -1387,1640 +1550,117 @@
         <!-- Surrender Modal -->
         <div id="surrenderModal" class="modal">
             <div class="modal-content">
-                <div class="modal-title">기권 확인</div>
-                <div class="modal-description">정말로 게임을 포기하시겠습니까?</div>
+                <div class="modal-title">정말 항복하시겠어요?</div>
+                <div class="modal-description">항복하면 -5점의 패널티를 받습니다.</div>
                 <div class="modal-buttons">
-                    <button class="modal-btn secondary" id="surrenderCancelBtn">취소</button>
-                    <button class="modal-btn primary" id="surrenderConfirmBtn">기권</button>
+                    <button id="surrenderConfirmBtn" class="modal-btn primary">항복</button>
+                    <button id="surrenderCancelBtn" class="modal-btn secondary">취소</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Full Ranking Modal -->
+        <div id="fullRankingModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-title">전체 랭킹</div>
+                <div id="fullRankingList" style="padding:12px;overflow-y:auto;max-height:55vh;"></div>
+            </div>
+        </div>
+
+        <!-- Profile Edit Modal -->
+        <div id="profileModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-title">프로필 수정</div>
+                <div style="text-align: left; margin-bottom: 16px;">
+                    <img id="profileModalAvatar" style="width:60px;height:60px;border-radius:50%;margin-bottom:12px;object-fit:cover;" alt="프로필">
+                    <div style="font-size:14px;color:#666;">
+                        <div style="margin-bottom:8px;"><strong>이메일</strong></div>
+                        <div id="profileModalEmail" style="font-size:12px;opacity:0.75;"></div>
+                    </div>
+                </div>
+                <button onclick="closeProfileModal()" class="modal-btn primary" style="width:100%;">닫기</button>
+            </div>
+        </div>
+
+        <!-- Class Creation Modal -->
+        <div id="classCreationModal" class="modal">
+            <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-title">반 개설</div>
+
+                <form id="classCreationForm">
+                    <div class="input-group">
+                        <label class="input-label required-label">반 이름</label>
+                        <input type="text" id="className" class="room-input" placeholder="예: 3학년 2반 수학반" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required-label">연산 선택</label>
+                        <div class="operations-select">
+                            <div class="operation-checkbox">
+                                <input type="checkbox" id="opAdd" name="operations" value="+" checked>
+                                <label for="opAdd">➕ 덧셈</label>
+                            </div>
+                            <div class="operation-checkbox">
+                                <input type="checkbox" id="opSub" name="operations" value="-" checked>
+                                <label for="opSub">➖ 뺄셈</label>
+                            </div>
+                            <div class="operation-checkbox">
+                                <input type="checkbox" id="opMul" name="operations" value="×">
+                                <label for="opMul">✖️ 곱셈</label>
+                            </div>
+                            <div class="operation-checkbox">
+                                <input type="checkbox" id="opDiv" name="operations" value="÷">
+                                <label for="opDiv">➗ 나눗셈</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required-label">게임 모드</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
+                                <input type="radio" name="gameMode" value="speed" required style="margin-right: 8px;">
+                                <span style="font-size: 13px;">⚡ 스피드</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
+                                <input type="radio" name="gameMode" value="survival" style="margin-right: 8px;">
+                                <span style="font-size: 13px;">🛡️ 서바이벌</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
+                                <input type="radio" name="gameMode" value="boss" style="margin-right: 8px;">
+                                <span style="font-size: 13px;">🐉 보스대전</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="modal-buttons" style="margin-top: 20px;">
+                        <button type="submit" class="modal-btn primary" style="flex: 1;">반 개설</button>
+                        <button type="button" class="modal-btn secondary" style="flex: 1;" onclick="closeClassCreationModal()">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Class Code Display Modal -->
+        <div id="classCodeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-title">반 개설 완료!</div>
+                <div class="modal-description">학생들에게 다음 코드를 알려주세요:</div>
+                <div class="class-code-display">
+                    <div class="class-code-label">반 코드</div>
+                    <div class="class-code-value" id="displayedClassCode">000000</div>
+                </div>
+                <div class="modal-description" style="font-size: 12px; margin-top: 16px;">반 코드를 이용해 학생들이 입장할 수 있습니다.</div>
+                <button class="modal-btn primary" style="width: 100%; margin-top: 16px;" onclick="closeClassCodeModal()">확인</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase (compat SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-compat.js"></script>
     <!-- PeerJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB4LGBS2A-LnLK0vhaNenDYsjYuCps_zhQ",
-            authDomain: "math-battle-game-2df66.firebaseapp.com",
-            projectId: "math-battle-game-2df66",
-            storageBucket: "math-battle-game-2df66.firebasestorage.app",
-            messagingSenderId: "649914533086",
-            appId: "1:649914533086:web:05964c02933229ae50ee4f"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Character set
-        const characters = ['🦁', '🐯', '🐻', '🐼', '🐨', '🐶', '🐱', '🦊', '🐭', '🐹', '🐰', '🦝', '🐸', '🐢', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦗', '🐜', '🐞', '🐝', '🦋', '🐌', '🐚', '🐠', '🐟', '🐡', '🦈', '🐙', '🦑', '🦐', '🦞'];
-
-        // Game state
-        let currentUser = null;
-        let currentRoom = null;
-        let peer = null;
-        let dataConnection = null;
-        let gameState = {
-            mode: null,
-            roomCode: null,
-            roomName: null,
-            hostName: null,
-            hostUid: null,
-            hostPhoto: null,
-            hostChar: null,
-            guestName: null,
-            guestUid: null,
-            guestPhoto: null,
-            guestChar: null,
-            myScore: 0,
-            opponentScore: 0,
-            myHealth: 10,
-            opponentHealth: 10,
-            bossHealth: 10,
-            myStreak: 0,
-            opponentStreak: 0,
-            difficulty: 1,
-            timeRemaining: 50,
-            isHost: false,
-            isReady: false,
-            opponentReady: false,
-            selectedChar: null,
-            currentQuestion: null,
-            gameActive: false
-        };
-
-        // Audio context
-        let audioContext = null;
-        function playSound(frequency, duration = 200) {
-            try {
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = frequency;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + duration / 1000);
-            } catch (e) {
-                console.log('Audio not available');
-            }
-        }
-
-        // UI Elements
-        const loginScreen = document.getElementById('loginScreen');
-        const homeScreen = document.getElementById('homeScreen');
-        const roomScreen = document.getElementById('roomScreen');
-        const roomSetup = document.getElementById('roomSetup');
-        const roomWaiting = document.getElementById('roomWaiting');
-        const countdown = document.getElementById('countdown');
-        const gameScreen = document.getElementById('gameScreen');
-        const gameEnd = document.getElementById('gameEnd');
-        const loadingScreen = document.getElementById('loadingScreen');
-
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const backBtn = document.getElementById('backBtn');
-        const createRoomBtn = document.getElementById('createRoomBtn');
-        const startGameBtn = document.getElementById('startGameBtn');
-        const readyBtn = document.getElementById('readyBtn');
-        const surrenderBtn = document.getElementById('surrenderBtn');
-        const backHomeBtn = document.getElementById('backHomeBtn');
-
-        // Room creation elements
-        const newRoomName = document.getElementById('newRoomName');
-        const accessCode = document.getElementById('accessCode');
-        const characterSelect = document.getElementById('characterSelect');
-
-        // Game elements
-        const questionText = document.getElementById('questionText');
-        const answerInput = document.getElementById('answerInput');
-        const gameTimer = document.getElementById('gameTimer');
-
-        // Public rooms container
-        const publicRoomsContainer = document.getElementById('publicRoomsContainer');
-
-        // Modals
-        const passwordModal = document.getElementById('passwordModal');
-        const passwordSubmitBtn = document.getElementById('passwordSubmitBtn');
-        const passwordCancelBtn = document.getElementById('passwordCancelBtn');
-        const modalPasswordInput = document.getElementById('modalPasswordInput');
-        const kickModal = document.getElementById('kickModal');
-        const kickConfirmBtn = document.getElementById('kickConfirmBtn');
-        const kickCancelBtn = document.getElementById('kickCancelBtn');
-        const surrenderModal = document.getElementById('surrenderModal');
-        const surrenderConfirmBtn = document.getElementById('surrenderConfirmBtn');
-        const surrenderCancelBtn = document.getElementById('surrenderCancelBtn');
-
-        // Initialize Google Sign-In (Firebase Auth signInWithPopup)
-        function initGoogleSignIn() {
-            loginScreen.style.display = 'flex';
-            googleLoginBtn.onclick = loginWithGoogle;
-        }
-
-        async function loginWithGoogle() {
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                const result = await auth.signInWithPopup(provider);
-                // onAuthStateChanged will handle the rest
-            } catch (error) {
-                console.error('Google login error:', error);
-                alert('로그인 실패: ' + error.message);
-            }
-        }
-
-        // Setup user session
-        async function setupUserSession(user) {
-            loadingScreen.style.display = 'none';
-            loginScreen.style.display = 'none';
-            homeScreen.style.display = 'flex';
-
-            document.getElementById('userName').textContent = user.displayName || '사용자';
-            document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/40';
-
-            // Initialize PeerJS with predictable ID based on uid
-            const myPeerId = 'mb-' + user.uid.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-            peer = new Peer(myPeerId, {
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
-            });
-
-            peer.on('open', (id) => {
-                console.log('My PeerJS ID:', id);
-            });
-
-            peer.on('error', (err) => {
-                console.log('Peer error:', err.type, err);
-                // If ID taken, try with random suffix
-                if (err.type === 'unavailable-id') {
-                    const altId = myPeerId + Math.random().toString(36).substring(2,5);
-                    peer = new Peer(altId, {
-                        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
-                    });
-                    peer.on('connection', (conn) => { dataConnection = conn; setupDataConnection(); });
-                }
-            });
-
-            peer.on('connection', (conn) => {
-                dataConnection = conn;
-                setupDataConnection();
-            });
-
-            // Ensure user document exists
-            const userRef = db.collection('users').doc(user.uid);
-            const userDoc = await userRef.get();
-            if (!userDoc.exists) {
-                await userRef.set({
-                    name: user.displayName,
-                    photo: user.photoURL,
-                    email: user.email,
-                    points: 0,
-                    gamesPlayed: 0,
-                    wins: 0,
-                    isAdmin: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } else {
-                const existingData = userDoc.data();
-                const updateData = {
-                    name: user.displayName,
-                    photo: user.photoURL,
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                // Fix corrupted points (if stored as Timestamp instead of number)
-                if (existingData.points && typeof existingData.points !== 'number') {
-                    updateData.points = 0;
-                }
-                await userRef.update(updateData);
-            }
-
-            // Cleanup any stale rooms I own from previous sessions
-            cleanupMyStaleRooms(user.uid);
-
-            loadUserStats();
-            loadPublicRooms();
-            setupGameModeSelection();
-        }
-
-        // Load user stats
-        async function loadUserStats() {
-            try {
-                const userRef = db.collection('users').doc(currentUser.uid);
-                const doc = await userRef.get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    const pts = (typeof data.points === 'number') ? data.points : 0;
-                    document.getElementById('userPoints').textContent = pts;
-                    document.getElementById('userGames').textContent = data.gamesPlayed || 0;
-                    document.getElementById('userWins').textContent = data.wins || 0;
-                }
-            } catch (error) {
-                console.error('Error loading user stats:', error);
-            }
-        }
-
-        // Cleanup stale rooms owned by this user from previous sessions
-        async function cleanupMyStaleRooms(uid) {
-            try {
-                const myRooms = await db.collection('rooms')
-                    .where('hostUid', '==', uid)
-                    .get();
-                myRooms.forEach((doc) => {
-                    const room = doc.data();
-                    // Delete rooms that are waiting with only host (abandoned rooms)
-                    if (room.status === 'waiting' && (!room.playerCount || room.playerCount <= 1)) {
-                        db.collection('rooms').doc(doc.id).delete().catch(() => {});
-                    }
-                });
-                // Also cleanup rooms where I'm a guest but shouldn't be
-                const guestRooms = await db.collection('rooms')
-                    .where('guestUid', '==', uid)
-                    .get();
-                guestRooms.forEach((doc) => {
-                    const room = doc.data();
-                    if (room.status === 'waiting') {
-                        db.collection('rooms').doc(doc.id).update({
-                            playerCount: 1,
-                            guestUid: firebase.firestore.FieldValue.delete(),
-                            guestName: firebase.firestore.FieldValue.delete(),
-                            guestPhoto: firebase.firestore.FieldValue.delete(),
-                            guestChar: firebase.firestore.FieldValue.delete(),
-                            guestPeerId: firebase.firestore.FieldValue.delete(),
-                            guestReady: false
-                        }).catch(() => {});
-                    }
-                });
-            } catch (error) {
-                console.log('Cleanup error:', error);
-            }
-        }
-
-        // Load public rooms
-        function loadPublicRooms() {
-            try {
-                // Simple query without composite index requirement
-                db.collection('rooms')
-                    .where('status', '==', 'waiting')
-                    .onSnapshot((snapshot) => {
-                        const rooms = [];
-                        snapshot.forEach((doc) => {
-                            const room = doc.data();
-                            room.id = doc.id;
-                            rooms.push(room);
-                        });
-                        // Sort client-side by createdAt desc
-                        rooms.sort((a, b) => {
-                            const ta = a.createdAt ? a.createdAt.seconds : 0;
-                            const tb = b.createdAt ? b.createdAt.seconds : 0;
-                            return tb - ta;
-                        });
-                        renderPublicRooms(rooms);
-                    }, (error) => {
-                        console.error('Error loading rooms:', error);
-                        publicRoomsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">현재 개설된 방이 없습니다. 새로운 방을 만들어보세요! 🎮</div>';
-                    });
-            } catch (error) {
-                console.error('Error setting up room listener:', error);
-                publicRoomsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">방 목록을 불러올 수 없습니다.</div>';
-            }
-        }
-
-        // Render public rooms
-        function renderPublicRooms(rooms) {
-            // Filter out stale rooms (created more than 2 hours ago)
-            const now = Date.now() / 1000;
-            const validRooms = rooms.filter(room => {
-                if (room.createdAt && room.createdAt.seconds) {
-                    const ageHours = (now - room.createdAt.seconds) / 3600;
-                    if (ageHours > 2) {
-                        // Auto-delete stale room
-                        db.collection('rooms').doc(room.id).delete().catch(() => {});
-                        return false;
-                    }
-                }
-                return true;
-            });
-
-            if (validRooms.length === 0) {
-                publicRoomsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">현재 개설된 방이 없습니다. 새로운 방을 만들어보세요! 🎮</div>';
-                return;
-            }
-
-            let html = '<div class="rooms-grid">';
-            validRooms.forEach((room) => {
-                const modeIcon = { 'speed': '⚡', 'survival': '🛡️', 'boss': '🐉' }[room.mode] || '-';
-                const modeName = { 'speed': '스피드', 'survival': '서바이벌', 'boss': '보스대전' }[room.mode] || '-';
-
-                const isFull = room.playerCount >= 2;
-                const isPlaying = room.status === 'playing';
-                const isMyRoom = currentUser && (room.hostUid === currentUser.uid || room.guestUid === currentUser.uid);
-                const lockIcon = room.hasPassword ? '🔒' : '';
-                const statusText = isFull ? (isPlaying ? '게임중' : '인원 가득') : `${room.playerCount || 1}/2 명`;
-
-                let btnText = '입장';
-                let btnDisabled = false;
-                if (isMyRoom) { btnText = '내 방'; btnDisabled = true; }
-                else if (isFull || isPlaying) { btnText = '대기중'; btnDisabled = true; }
-
-                html += `
-                    <div class="room-card${isMyRoom ? ' my-room' : ''}">
-                        <div class="room-card-header">
-                            <div class="room-name">${escapeHtml(room.roomName || '이름 없음')}</div>
-                            <div class="room-lock-icon">${lockIcon}</div>
-                        </div>
-                        <div class="room-card-info">
-                            <div class="room-host">
-                                <img class="room-host-avatar" src="${room.hostPhoto || 'https://via.placeholder.com/24'}" alt="호스트">
-                                <span>${escapeHtml(room.hostName || '?')}</span>
-                            </div>
-                            <div class="room-divider">·</div>
-                            <div class="room-mode"><span>${modeIcon}</span> <span>${modeName}</span></div>
-                            <div class="room-divider">·</div>
-                            <span>${statusText}</span>
-                        </div>
-                        <div class="room-card-footer">
-                            <div class="room-status ${isFull ? 'full' : ''}">${isFull ? '인원 가득' : '입장 가능'}</div>
-                            <button class="room-join-btn" ${btnDisabled ? 'disabled' : ''} onclick="joinPublicRoom('${room.id}', ${room.hasPassword})">${btnText}</button>
-                        </div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            publicRoomsContainer.innerHTML = html;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Join public room
-        function joinPublicRoom(roomId, hasPassword) {
-            if (hasPassword) {
-                showPasswordModal(roomId);
-            } else {
-                proceedToJoinRoom(roomId, null);
-            }
-        }
-
-        // Show password modal
-        function showPasswordModal(roomId) {
-            modalPasswordInput.value = '';
-            passwordModal.classList.add('active');
-            modalPasswordInput.focus();
-
-            passwordSubmitBtn.onclick = () => {
-                const password = modalPasswordInput.value;
-                proceedToJoinRoom(roomId, password);
-            };
-
-            passwordCancelBtn.onclick = () => {
-                passwordModal.classList.remove('active');
-            };
-
-            modalPasswordInput.onkeypress = (e) => {
-                if (e.key === 'Enter') {
-                    const password = modalPasswordInput.value;
-                    proceedToJoinRoom(roomId, password);
-                }
-            };
-        }
-
-        // Proceed to join room
-        async function proceedToJoinRoom(roomId, password) {
-            try {
-                // Prevent joining if already in a room
-                if (currentRoom) {
-                    alert('이미 다른 방에 입장해 있습니다. 먼저 나가주세요.');
-                    passwordModal.classList.remove('active');
-                    return;
-                }
-
-                const roomRef = db.collection('rooms').doc(roomId);
-                const roomDoc = await roomRef.get();
-
-                if (!roomDoc.exists) {
-                    alert('방을 찾을 수 없습니다. (이미 삭제된 방)');
-                    passwordModal.classList.remove('active');
-                    return;
-                }
-
-                const room = roomDoc.data();
-
-                // Prevent joining own room
-                if (room.hostUid === currentUser.uid) {
-                    alert('본인이 만든 방에는 입장할 수 없습니다.');
-                    passwordModal.classList.remove('active');
-                    return;
-                }
-
-                // Prevent duplicate join
-                if (room.guestUid === currentUser.uid) {
-                    alert('이미 이 방에 입장해 있습니다.');
-                    passwordModal.classList.remove('active');
-                    return;
-                }
-
-                if (room.hasPassword && room.password !== password) {
-                    alert('잘못된 접속 코드입니다.');
-                    return;
-                }
-
-                if (room.playerCount >= 2) {
-                    alert('이미 가득 찬 방입니다.');
-                    passwordModal.classList.remove('active');
-                    return;
-                }
-
-                gameState.mode = room.mode;
-                gameState.roomCode = room.roomCode;
-                gameState.roomName = room.roomName;
-                gameState.hostName = room.hostName;
-                gameState.hostUid = room.hostUid;
-                gameState.hostPhoto = room.hostPhoto;
-                gameState.hostChar = room.hostChar;
-                gameState.isHost = false;
-                gameState.isReady = false;
-                gameState.opponentReady = false;
-                currentRoom = roomId;
-
-                passwordModal.classList.remove('active');
-                showRoomScreen();
-                skipToRoomWaiting(room);
-            } catch (error) {
-                console.error('Error joining room:', error);
-                alert('방에 입장할 수 없습니다.');
-            }
-        }
-
-        // Setup game mode selection
-        function setupGameModeSelection() {
-            const modeBtns = document.querySelectorAll('.game-mode-btn');
-            modeBtns.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const mode = btn.dataset.mode;
-                    startCreateRoom(mode);
-                });
-            });
-        }
-
-        // Start room creation
-        function startCreateRoom(mode) {
-            gameState.mode = mode;
-            gameState.isHost = true;
-            gameState.opponentReady = false;
-
-            // Display mode info
-            const modeInfo = {
-                'speed': { icon: '⚡', name: '스피드 모드' },
-                'survival': { icon: '🛡️', name: '서바이벌 모드' },
-                'boss': { icon: '🐉', name: '보스 모드' }
-            };
-
-            document.getElementById('modeIconDisplay').textContent = modeInfo[mode].icon;
-            document.getElementById('modeNameDisplay').textContent = modeInfo[mode].name;
-
-            // Populate character select
-            characterSelect.innerHTML = '';
-            characters.forEach((char) => {
-                const btn = document.createElement('button');
-                btn.className = 'character-btn';
-                btn.textContent = char;
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.character-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    gameState.selectedChar = char;
-                    gameState.hostChar = char;
-                });
-                characterSelect.appendChild(btn);
-            });
-
-            // Clear inputs
-            newRoomName.value = '';
-            accessCode.value = '';
-
-            showRoomScreen();
-            roomSetup.classList.add('active');
-        }
-
-        // Validate and create room
-        createRoomBtn.addEventListener('click', async () => {
-            const roomName = newRoomName.value.trim();
-            if (!roomName) {
-                alert('방 이름을 입력해주세요.');
-                return;
-            }
-
-            if (!gameState.selectedChar) {
-                alert('캐릭터를 선택해주세요.');
-                return;
-            }
-
-            const code = generateRoomCode();
-            const hasPassword = accessCode.value.trim() !== '';
-            const password = hasPassword ? accessCode.value.trim() : null;
-
-            try {
-                const roomRef = db.collection('rooms').doc();
-                currentRoom = roomRef.id;
-
-                await roomRef.set({
-                    roomCode: code,
-                    roomName: roomName,
-                    mode: gameState.mode,
-                    hostName: currentUser.displayName,
-                    hostUid: currentUser.uid,
-                    hostPhoto: currentUser.photoURL,
-                    hostPeerId: peer.id,
-                    hostChar: gameState.selectedChar,
-                    ops: 0,
-                    hasPassword: hasPassword,
-                    password: password,
-                    status: 'waiting',
-                    playerCount: 1,
-                    hostReady: false,
-                    guestReady: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                gameState.roomCode = code;
-                gameState.roomName = roomName;
-                gameState.hostName = currentUser.displayName;
-                gameState.hostUid = currentUser.uid;
-                gameState.hostPhoto = currentUser.photoURL;
-                gameState.hostChar = gameState.selectedChar;
-                gameState.isReady = false;
-
-                // Listen for room changes (detect guest joining)
-                setupRoomListener(roomRef);
-
-                roomSetup.classList.remove('active');
-                showRoomWaiting();
-            } catch (error) {
-                console.error('Error creating room:', error);
-                alert('방을 만들 수 없습니다.');
-            }
-        });
-
-        // Generate room code
-        function generateRoomCode() {
-            return Math.random().toString(36).substring(2, 6).toUpperCase();
-        }
-
-        // Room listener unsubscribe function
-        let roomUnsubscribe = null;
-
-        // Setup real-time listener for room changes
-        function setupRoomListener(roomRef) {
-            // Cleanup previous listener
-            if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
-
-            roomUnsubscribe = roomRef.onSnapshot((doc) => {
-                if (!doc.exists) {
-                    // Room was deleted
-                    console.log('Room deleted');
-                    if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
-                    return;
-                }
-                const data = doc.data();
-
-                // Host detects guest joined
-                if (gameState.isHost && data.guestUid && !gameState.guestUid) {
-                    gameState.guestUid = data.guestUid;
-                    gameState.guestName = data.guestName;
-                    gameState.guestPhoto = data.guestPhoto;
-                    gameState.guestChar = data.guestChar;
-                    // Connect to guest's PeerJS
-                    if (data.guestPeerId) {
-                        connectToPeer(data.guestPeerId);
-                    }
-                    showRoomWaiting();
-                }
-
-                // Guest detects guest info cleared (was kicked or host left)
-                if (!gameState.isHost && !data.guestUid && gameState.guestUid === currentUser.uid) {
-                    // Guest was removed
-                }
-
-                // Detect room deletion (all left)
-                if (data.playerCount === 0 || (!data.hostUid && !data.guestUid)) {
-                    roomRef.delete().catch(() => {});
-                }
-            }, (error) => {
-                console.error('Room listener error:', error);
-            });
-        }
-
-        // Show room screen
-        function showRoomScreen() {
-            homeScreen.style.display = 'none';
-            roomScreen.style.display = 'flex';
-            // Reset all sub-screens
-            roomSetup.classList.remove('active');
-            roomWaiting.classList.remove('active');
-            countdown.classList.remove('active');
-            gameScreen.classList.remove('active');
-            gameEnd.classList.remove('active');
-        }
-
-        // Skip to room waiting
-        async function skipToRoomWaiting(room) {
-            try {
-                // Get opponent info from Firestore
-                gameState.hostName = room.hostName;
-                gameState.hostPhoto = room.hostPhoto;
-
-                // Select a random character
-                gameState.guestChar = characters[Math.floor(Math.random() * characters.length)];
-                gameState.guestName = currentUser.displayName;
-                gameState.guestUid = currentUser.uid;
-                gameState.guestPhoto = currentUser.photoURL;
-
-                // Update room with guest info + PeerJS ID
-                const roomRef = db.collection('rooms').doc(currentRoom);
-                await roomRef.update({
-                    playerCount: 2,
-                    guestName: gameState.guestName,
-                    guestUid: gameState.guestUid,
-                    guestPhoto: gameState.guestPhoto,
-                    guestChar: gameState.guestChar,
-                    guestPeerId: peer.id
-                });
-
-                // Setup real-time listener for guest too
-                setupRoomListener(roomRef);
-
-                // Connect to host's PeerJS using hostPeerId from Firestore
-                if (room.hostPeerId) {
-                    connectToPeer(room.hostPeerId);
-                }
-
-                showRoomWaiting();
-            } catch (error) {
-                console.error('Error joining room:', error);
-                alert('방 입장에 실패했습니다.');
-            }
-        }
-
-        // Show room waiting screen
-        function showRoomWaiting() {
-            // Hide ALL sub-screens first
-            roomSetup.classList.remove('active');
-            countdown.classList.remove('active');
-            gameScreen.classList.remove('active');
-            gameEnd.classList.remove('active');
-            // Then show waiting
-            roomWaiting.classList.add('active');
-
-            // Update room info
-            document.getElementById('waitingRoomName').textContent = gameState.roomName || '-';
-            const modeNames = {
-                'speed': '⚡ 스피드',
-                'survival': '🛡️ 서바이벌',
-                'boss': '🐉 보스대전'
-            };
-            document.getElementById('waitingRoomMode').textContent = modeNames[gameState.mode] || '-';
-
-            // Update host info
-            document.getElementById('hostAvatar').src = gameState.hostPhoto || 'https://via.placeholder.com/40';
-            document.getElementById('hostName').textContent = gameState.hostName || '-';
-            document.getElementById('hostChar').textContent = gameState.hostChar || '-';
-
-            // Render guest section
-            const guestSection = document.getElementById('guestSection');
-            if (gameState.guestUid) {
-                guestSection.innerHTML = `
-                    <div class="player-card">
-                        <div class="player-info">
-                            <img class="player-avatar" src="${gameState.guestPhoto || 'https://via.placeholder.com/40'}" alt="게스트">
-                            <div class="player-name-char">
-                                <div class="player-name">${escapeHtml(gameState.guestName || '-')}</div>
-                                <div class="player-char">${gameState.guestChar || '-'}</div>
-                            </div>
-                        </div>
-                        <div class="player-status ${gameState.guestUid === currentUser.uid || gameState.opponentReady ? 'ready' : ''}" id="guestStatus">
-                            ${gameState.guestUid === currentUser.uid || gameState.opponentReady ? '준비 완료' : '준비 중'}
-                        </div>
-                    </div>
-                `;
-            } else {
-                guestSection.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">게스트 대기 중...</div>';
-            }
-
-            // Setup buttons - both host and guest use ready button
-            const readyButtonSection = document.getElementById('readyButtonSection');
-            const waitingMessageSection = document.getElementById('waitingMessageSection');
-
-            startGameBtn.style.display = 'none'; // No manual start - auto start on both ready
-
-            if (gameState.guestUid) {
-                // Guest is present - show ready button for both host and guest
-                readyButtonSection.style.display = 'block';
-                if (!gameState.isReady) {
-                    readyBtn.textContent = '✅ 준비 완료';
-                    readyBtn.classList.remove('ready-btn');
-                    readyBtn.classList.add('not-ready-btn');
-                } else {
-                    readyBtn.textContent = '⏳ 준비 취소';
-                    readyBtn.classList.remove('not-ready-btn');
-                    readyBtn.classList.add('ready-btn');
-                }
-
-                if (gameState.isReady && gameState.opponentReady) {
-                    waitingMessageSection.innerHTML = '<div style="text-align:center;color:#4CAF50;font-weight:bold;padding:10px;">🎮 양쪽 준비 완료! 5초 후 시작합니다...</div>';
-                    waitingMessageSection.style.display = 'block';
-                } else if (gameState.isReady) {
-                    waitingMessageSection.innerHTML = '<div style="text-align:center;color:#FF9800;padding:10px;">상대방을 기다리는 중...</div>';
-                    waitingMessageSection.style.display = 'block';
-                } else {
-                    waitingMessageSection.style.display = 'none';
-                }
-            } else {
-                // No guest yet
-                readyButtonSection.style.display = 'none';
-                waitingMessageSection.innerHTML = '<div style="text-align:center;color:#999;padding:10px;">게스트 입장을 기다리는 중...</div>';
-                waitingMessageSection.style.display = 'block';
-            }
-        }
-
-        // Ready button handler
-        readyBtn.addEventListener('click', async () => {
-            gameState.isReady = !gameState.isReady;
-            try {
-                await db.collection('rooms').doc(currentRoom).update({
-                    [gameState.isHost ? 'hostReady' : 'guestReady']: gameState.isReady
-                });
-            } catch (e) { console.log('Ready update error:', e); }
-            sendPeerMessage({
-                type: 'READY_STATUS',
-                ready: gameState.isReady
-            });
-            showRoomWaiting();
-            // Check if both ready → auto start
-            checkBothReadyAndStart();
-        });
-
-        // Check if both players are ready and auto-start countdown
-        function checkBothReadyAndStart() {
-            if (gameState.isReady && gameState.opponentReady && gameState.guestUid) {
-                // Both ready! Auto start after brief delay
-                if (gameState.isHost) {
-                    db.collection('rooms').doc(currentRoom).update({ status: 'playing' }).catch(() => {});
-                    sendPeerMessage({ type: 'START_GAME' });
-                    startCountdown();
-                }
-                // Guest waits for START_GAME message from host
-            }
-        }
-
-        // Connect to peer
-        function connectToPeer(peerId) {
-            if (peer.id === peerId) return;
-            dataConnection = peer.connect(peerId);
-            setupDataConnection();
-        }
-
-        // Setup data connection
-        function setupDataConnection() {
-            dataConnection.on('open', () => {
-                console.log('Connected to peer');
-            });
-
-            dataConnection.on('data', (data) => {
-                handlePeerMessage(data);
-            });
-
-            dataConnection.on('error', (error) => {
-                console.log('Peer connection error:', error);
-            });
-
-            dataConnection.on('close', () => {
-                console.log('Peer connection closed');
-                if (gameState.gameActive) {
-                    gameState.gameActive = false;
-                    alert('상대방과의 연결이 끊어졌습니다.');
-                    goHome();
-                } else if (currentRoom) {
-                    // Not in game - opponent left the room
-                    gameState.guestUid = null;
-                    gameState.guestName = null;
-                    gameState.guestPhoto = null;
-                    gameState.opponentReady = false;
-                    showRoomWaiting();
-                }
-            });
-        }
-
-        // Send peer message
-        function sendPeerMessage(message) {
-            try {
-                if (dataConnection && dataConnection.open) {
-                    dataConnection.send(message);
-                }
-            } catch (error) {
-                console.log('Error sending message:', error);
-            }
-        }
-
-        // Handle peer message
-        function handlePeerMessage(data) {
-            switch (data.type) {
-                case 'READY_STATUS':
-                    gameState.opponentReady = data.ready;
-                    showRoomWaiting();
-                    // Check if both ready → auto start
-                    checkBothReadyAndStart();
-                    break;
-                case 'START_GAME':
-                    startCountdown();
-                    break;
-                case 'ANSWER':
-                    handleOpponentAnswer(data.answer);
-                    break;
-                case 'CORRECT':
-                    handleOpponentCorrect();
-                    break;
-                case 'INCORRECT':
-                    handleOpponentIncorrect();
-                    break;
-                case 'GAME_END':
-                    handleGameEnd(data);
-                    break;
-                case 'KICKED':
-                    alert('방장이 당신을 강제퇴장했습니다.');
-                    goHome();
-                    break;
-                case 'HOST_TRANSFER':
-                    // Guest becomes the new host
-                    gameState.isHost = true;
-                    gameState.hostUid = currentUser.uid;
-                    gameState.hostName = currentUser.displayName;
-                    gameState.hostPhoto = currentUser.photoURL;
-                    gameState.guestUid = null;
-                    gameState.guestName = null;
-                    gameState.guestPhoto = null;
-                    gameState.opponentReady = false;
-                    gameState.isReady = false;
-                    alert('방장이 나갔습니다. 당신이 새 방장이 되었습니다!');
-                    showRoomWaiting();
-                    break;
-                case 'GUEST_LEFT':
-                    // Guest left the room
-                    gameState.guestUid = null;
-                    gameState.guestName = null;
-                    gameState.guestPhoto = null;
-                    gameState.opponentReady = false;
-                    showRoomWaiting();
-                    break;
-                case 'CHAT':
-                    console.log('Message:', data.message);
-                    break;
-            }
-        }
-
-        // Start countdown
-        async function startCountdown() {
-            roomWaiting.classList.remove('active');
-            countdown.classList.add('active');
-
-            let count = 3;
-            document.getElementById('countdownNumber').textContent = count;
-
-            const countInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    document.getElementById('countdownNumber').textContent = count;
-                    playSound(800, 100);
-                } else {
-                    clearInterval(countInterval);
-                    countdown.classList.remove('active');
-                    startGame();
-                }
-            }, 1000);
-        }
-
-        // Start game
-        function startGame() {
-            gameState.gameActive = true;
-            gameState.myScore = 0;
-            gameState.opponentScore = 0;
-            gameState.myHealth = 10;
-            gameState.opponentHealth = 10;
-            gameState.myStreak = 0;
-            gameState.opponentStreak = 0;
-            gameState.difficulty = 1;
-            gameState.bossHealth = 5;
-            gameState.timeRemaining = 50;
-
-            countdown.classList.remove('active');
-            gameScreen.classList.add('active');
-
-            // Setup survival mode
-            if (gameState.mode === 'survival') {
-                document.getElementById('survivalHealthSection').style.display = 'block';
-                updateHealthDisplay();
-            } else if (gameState.mode === 'boss') {
-                document.getElementById('bossHealthSection').style.display = 'block';
-                updateBossHealthDisplay();
-            }
-
-            // Update game header
-            document.getElementById('player1Avatar').src = currentUser.photoURL;
-            document.getElementById('player1Name').textContent = currentUser.displayName;
-            document.getElementById('player2Avatar').src = gameState.isHost ? gameState.guestPhoto : gameState.hostPhoto;
-            document.getElementById('player2Name').textContent = gameState.isHost ? gameState.guestName : gameState.hostName;
-
-            generateQuestion();
-            answerInput.focus();
-
-            // Start timer
-            startGameTimer();
-        }
-
-        // Generate question
-        // Subtraction-only question generator with progressive difficulty
-        // Difficulty 1: 한 자릿수 - 한 자릿수 (받아내림 없음, 예: 9-3)
-        // Difficulty 2: 두 자릿수 - 한 자릿수 (받아내림 없음, 예: 27-3)
-        // Difficulty 3: 두 자릿수 - 한 자릿수 (받아내림 있음, 예: 23-7)
-        // Difficulty 4: 두 자릿수 - 두 자릿수 (받아내림 없음, 예: 58-23)
-        // Difficulty 5: 두 자릿수 - 두 자릿수 (받아내림 있음, 예: 52-27)
-        // Difficulty 6: 세 자릿수 - 두 자릿수 (받아내림 없음, 예: 385-42)
-        // Difficulty 7: 세 자릿수 - 두 자릿수 (받아내림 있음, 예: 403-57)
-        // Difficulty 8+: 세 자릿수 - 세 자릿수 (받아내림 있음, 예: 712-358)
-        function generateQuestion() {
-            const diff = gameState.difficulty || 1;
-            let a, b;
-
-            if (diff <= 1) {
-                // 한 자릿수 - 한 자릿수, 받아내림 없음
-                a = Math.floor(Math.random() * 8) + 2; // 2~9
-                b = Math.floor(Math.random() * a) + 1;  // 1~(a-1), 결과 >= 0
-            } else if (diff === 2) {
-                // 두 자릿수 - 한 자릿수, 받아내림 없음
-                const tens = Math.floor(Math.random() * 9) + 1; // 1~9
-                const ones = Math.floor(Math.random() * 8) + 2; // 2~9
-                a = tens * 10 + ones;
-                b = Math.floor(Math.random() * ones) + 1; // 1~ones (받아내림 없음)
-            } else if (diff === 3) {
-                // 두 자릿수 - 한 자릿수, 받아내림 있음
-                const tens = Math.floor(Math.random() * 8) + 2; // 2~9
-                const ones = Math.floor(Math.random() * 5); // 0~4
-                a = tens * 10 + ones;
-                b = ones + Math.floor(Math.random() * (9 - ones)) + 1; // ones보다 큰 수
-                if (b > 9) b = 9;
-            } else if (diff === 4) {
-                // 두 자릿수 - 두 자릿수, 받아내림 없음
-                const t1 = Math.floor(Math.random() * 7) + 3; // 3~9
-                const o1 = Math.floor(Math.random() * 7) + 2; // 2~8
-                a = t1 * 10 + o1;
-                const t2 = Math.floor(Math.random() * t1) + 1; // 1~(t1-1)
-                const o2 = Math.floor(Math.random() * o1) + 1; // 1~(o1-1)
-                b = t2 * 10 + o2;
-            } else if (diff === 5) {
-                // 두 자릿수 - 두 자릿수, 받아내림 있음
-                a = Math.floor(Math.random() * 50) + 40; // 40~89
-                b = Math.floor(Math.random() * 30) + 11; // 11~40
-                if (b >= a) b = a - Math.floor(Math.random() * 10) - 1;
-                if (b < 10) b = 10 + Math.floor(Math.random() * 10);
-            } else if (diff === 6) {
-                // 세 자릿수 - 두 자릿수, 받아내림 없음
-                a = Math.floor(Math.random() * 400) + 200; // 200~599
-                b = Math.floor(Math.random() * 40) + 11;   // 11~50
-                // 일의 자리 받아내림 없도록 조정
-                if ((a % 10) < (b % 10)) a = a - (a % 10) + (b % 10) + Math.floor(Math.random() * 3);
-            } else if (diff === 7) {
-                // 세 자릿수 - 두 자릿수, 받아내림 있음
-                a = Math.floor(Math.random() * 400) + 300; // 300~699
-                b = Math.floor(Math.random() * 60) + 30;   // 30~89
-            } else {
-                // 세 자릿수 - 세 자릿수, 받아내림 있음
-                a = Math.floor(Math.random() * 500) + 400; // 400~899
-                b = Math.floor(Math.random() * 300) + 100;  // 100~399
-                if (b >= a) b = a - Math.floor(Math.random() * 50) - 10;
-            }
-
-            // 항상 a > b 보장
-            if (a <= b) { const temp = a; a = b + Math.floor(Math.random() * 5) + 1; }
-
-            const answer = a - b;
-            const question = `${a} - ${b}`;
-
-            gameState.currentQuestion = {
-                question: question,
-                answer: String(answer)
-            };
-
-            questionText.textContent = gameState.currentQuestion.question;
-            answerInput.value = '';
-            answerInput.focus();
-        }
-
-        // Handle answer submission
-        answerInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const answer = answerInput.value.trim();
-                if (answer === gameState.currentQuestion.answer) {
-                    handleCorrectAnswer();
-                } else {
-                    handleIncorrectAnswer();
-                }
-            }
-        });
-
-        // Handle correct answer
-        function handleCorrectAnswer() {
-            gameState.myScore++;
-            gameState.myStreak++;
-            playSound(1200, 100);
-
-            // Streak bonus: 3 consecutive correct → +1 life
-            if (gameState.myStreak > 0 && gameState.myStreak % 3 === 0) {
-                gameState.myHealth++;
-                playSound(1600, 150); // bonus sound
-            }
-
-            // Difficulty increase every 5 correct answers
-            gameState.difficulty = Math.min(8, 1 + Math.floor(gameState.myScore / 5));
-
-            // Opponent loses 1 life (in all modes)
-            if (gameState.mode === 'survival') {
-                gameState.opponentHealth = Math.max(0, gameState.opponentHealth - 1);
-            } else if (gameState.mode === 'boss') {
-                gameState.bossHealth = Math.max(0, gameState.bossHealth - 1);
-            }
-
-            document.getElementById('player1Score').textContent = gameState.myScore;
-            updateHealthDisplay();
-            updateBossHealthDisplay();
-
-            // Check win condition
-            if (gameState.mode === 'survival' && gameState.opponentHealth === 0) {
-                endGame('win');
-                return;
-            } else if (gameState.mode === 'boss' && gameState.bossHealth === 0) {
-                endGame('win');
-                return;
-            }
-
-            sendPeerMessage({
-                type: 'CORRECT'
-            });
-
-            generateQuestion();
-            startQuestionTimer(); // Reset timer for next question
-        }
-
-        // Handle incorrect answer - lose 1 life
-        function handleIncorrectAnswer() {
-            playSound(400, 100);
-            gameState.myStreak = 0; // Reset streak
-
-            // My life -1 (in all modes when I answer wrong)
-            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
-
-            updateHealthDisplay();
-
-            sendPeerMessage({ type: 'INCORRECT' });
-
-            // Check lose condition
-            if (gameState.myHealth <= 0) {
-                endGame('lose');
-                return;
-            }
-
-            answerInput.value = '';
-            answerInput.focus();
-            startQuestionTimer(); // Reset timer for next attempt
-        }
-
-        // Handle opponent correct → my life -1
-        function handleOpponentCorrect() {
-            gameState.opponentScore++;
-            document.getElementById('player2Score').textContent = gameState.opponentScore;
-
-            // Opponent got it right → I lose 1 life
-            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
-            updateHealthDisplay();
-
-            if (gameState.mode === 'boss') {
-                gameState.bossHealth = Math.max(0, gameState.bossHealth - 1);
-                updateBossHealthDisplay();
-            }
-
-            if (gameState.myHealth === 0) {
-                endGame('lose');
-                return;
-            }
-        }
-
-        // Handle opponent incorrect → opponent loses 1 life (already handled on their side)
-        function handleOpponentIncorrect() {
-            // Opponent's life loss is handled on their own device
-            // We just update the display
-            gameState.opponentHealth = Math.max(0, gameState.opponentHealth - 1);
-            updateHealthDisplay();
-            if (gameState.opponentHealth === 0) {
-                endGame('win');
-                return;
-            }
-        }
-
-        // Handle opponent answer
-        function handleOpponentAnswer(answer) {
-            sendPeerMessage({
-                type: answer === gameState.currentQuestion.answer ? 'CORRECT' : 'INCORRECT'
-            });
-        }
-
-        // Update health display
-        function updateHealthDisplay() {
-            const h1 = gameState.myHealth;
-            const h2 = gameState.opponentHealth;
-            document.getElementById('player1Health').innerHTML = `❤️×${h1}` + (gameState.myStreak >= 2 ? ` <span style="color:#FF9800;font-size:11px;">🔥${gameState.myStreak}연속</span>` : '');
-            document.getElementById('player2Health').innerHTML = `❤️×${h2}`;
-        }
-
-        // Update boss health display
-        function updateBossHealthDisplay() {
-            document.getElementById('bossHealth').textContent = '🐉 '.repeat(gameState.bossHealth);
-        }
-
-        // Per-question timer (50 seconds per question)
-        let questionTimerInterval = null;
-        const TIME_PER_QUESTION = 50;
-
-        function startQuestionTimer() {
-            // Clear previous timer
-            if (questionTimerInterval) clearInterval(questionTimerInterval);
-            gameState.timeRemaining = TIME_PER_QUESTION;
-            document.getElementById('gameTimer').textContent = gameState.timeRemaining;
-
-            questionTimerInterval = setInterval(() => {
-                if (!gameState.gameActive) { clearInterval(questionTimerInterval); return; }
-                gameState.timeRemaining--;
-                document.getElementById('gameTimer').textContent = gameState.timeRemaining;
-
-                // Visual warning when time is low
-                const timerEl = document.getElementById('gameTimer');
-                if (gameState.timeRemaining <= 10) {
-                    timerEl.style.color = '#FF3B30';
-                    timerEl.style.fontWeight = '900';
-                } else {
-                    timerEl.style.color = '';
-                    timerEl.style.fontWeight = '';
-                }
-
-                if (gameState.timeRemaining <= 0) {
-                    clearInterval(questionTimerInterval);
-                    // Time's up! Lose 1 life
-                    handleTimeOut();
-                }
-            }, 1000);
-        }
-
-        function handleTimeOut() {
-            playSound(300, 200);
-            gameState.myStreak = 0; // Reset streak
-            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
-            updateHealthDisplay();
-
-            sendPeerMessage({ type: 'INCORRECT' });
-
-            // Check lose condition
-            if (gameState.myHealth <= 0) {
-                endGame('lose');
-                return;
-            }
-
-            // Next question with fresh timer
-            generateQuestion();
-            startQuestionTimer();
-        }
-
-        // Legacy wrapper for speed mode (keeps overall timer)
-        function startGameTimer() {
-            gameState.timeRemaining = TIME_PER_QUESTION;
-            startQuestionTimer();
-        }
-
-        // Surrender button
-        surrenderBtn.addEventListener('click', () => {
-            surrenderModal.classList.add('active');
-        });
-
-        surrenderConfirmBtn.addEventListener('click', () => {
-            surrenderModal.classList.remove('active');
-            endGame('lose');
-        });
-
-        surrenderCancelBtn.addEventListener('click', () => {
-            surrenderModal.classList.remove('active');
-        });
-
-        // End game
-        async function endGame(result) {
-            gameState.gameActive = false;
-            if (questionTimerInterval) { clearInterval(questionTimerInterval); questionTimerInterval = null; }
-            gameScreen.classList.remove('active');
-            gameEnd.classList.add('active');
-
-            let resultEmoji, resultText, pointsEarned;
-
-            if (result === 'win') {
-                resultEmoji = '🎉';
-                resultText = '승리!';
-                pointsEarned = 50;
-            } else if (result === 'lose') {
-                resultEmoji = '😢';
-                resultText = '패배!';
-                pointsEarned = 0;
-            } else {
-                resultEmoji = '😐';
-                resultText = '무승부!';
-                pointsEarned = 25;
-            }
-
-            document.getElementById('resultEmoji').textContent = resultEmoji;
-            document.getElementById('gameResult').textContent = resultText;
-            document.getElementById('gameResult').className = `game-result ${result === 'win' ? 'win' : result === 'lose' ? 'lose' : 'draw'}`;
-            document.getElementById('myFinalScore').textContent = gameState.myScore;
-            document.getElementById('opponentFinalScore').textContent = gameState.opponentScore;
-            document.getElementById('pointsEarned').textContent = '+' + pointsEarned;
-
-            sendPeerMessage({
-                type: 'GAME_END',
-                result: result,
-                myScore: gameState.myScore,
-                opponentScore: gameState.opponentScore
-            });
-
-            // Update user stats
-            if (result === 'win') {
-                await db.collection('users').doc(currentUser.uid).update({
-                    points: firebase.firestore.FieldValue.increment(pointsEarned),
-                    wins: firebase.firestore.FieldValue.increment(1),
-                    gamesPlayed: firebase.firestore.FieldValue.increment(1)
-                });
-            } else {
-                await db.collection('users').doc(currentUser.uid).update({
-                    points: firebase.firestore.FieldValue.increment(pointsEarned),
-                    gamesPlayed: firebase.firestore.FieldValue.increment(1)
-                });
-            }
-
-            // Clean up room
-            if (gameState.isHost) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await db.collection('rooms').doc(currentRoom).update({
-                    status: 'finished'
-                });
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                try {
-                    await db.collection('rooms').doc(currentRoom).delete();
-                } catch (error) {
-                    console.log('Error deleting room:', error);
-                }
-            }
-        }
-
-        // Handle game end message
-        function handleGameEnd(data) {
-            // Game end already handled locally
-        }
-
-        // Back to home
-        function goHome() {
-            gameState.gameActive = false;
-            roomScreen.style.display = 'none';
-            homeScreen.style.display = 'flex';
-            roomSetup.classList.remove('active');
-            roomWaiting.classList.remove('active');
-            countdown.classList.remove('active');
-            gameScreen.classList.remove('active');
-            gameEnd.classList.remove('active');
-
-            // Cleanup room listener
-            if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
-
-            // Clear room reference
-            currentRoom = null;
-
-            // Reset game state
-            gameState.isHost = false;
-            gameState.isReady = false;
-            gameState.opponentReady = false;
-            gameState.guestUid = null;
-            gameState.guestName = null;
-            gameState.guestPhoto = null;
-
-            // Reload public rooms
-            loadPublicRooms();
-            loadUserStats();
-        }
-
-        // Back button - handles host leaving (transfer to guest) or guest leaving
-        backBtn.addEventListener('click', async () => {
-            if (!currentRoom) { goHome(); return; }
-
-            try {
-                const roomRef = db.collection('rooms').doc(currentRoom);
-                const roomDoc = await roomRef.get();
-
-                if (!roomDoc.exists) { goHome(); return; }
-                const roomData = roomDoc.data();
-
-                if (gameState.isHost) {
-                    // Host is leaving
-                    if (roomData.guestUid) {
-                        // Guest exists → transfer host to guest
-                        sendPeerMessage({ type: 'HOST_TRANSFER' });
-                        await roomRef.update({
-                            hostUid: roomData.guestUid,
-                            hostName: roomData.guestName || '사용자',
-                            hostPhoto: roomData.guestPhoto || '',
-                            hostChar: roomData.guestChar || '',
-                            hostPeerId: roomData.guestPeerId || '',
-                            hostReady: false,
-                            guestReady: false,
-                            guestUid: firebase.firestore.FieldValue.delete(),
-                            guestName: firebase.firestore.FieldValue.delete(),
-                            guestPhoto: firebase.firestore.FieldValue.delete(),
-                            guestChar: firebase.firestore.FieldValue.delete(),
-                            guestPeerId: firebase.firestore.FieldValue.delete(),
-                            playerCount: 1,
-                            status: 'waiting'
-                        });
-                    } else {
-                        // No guest → delete room
-                        await roomRef.delete();
-                    }
-                } else {
-                    // Guest is leaving
-                    await roomRef.update({
-                        playerCount: 1,
-                        status: 'waiting',
-                        guestReady: false,
-                        guestUid: firebase.firestore.FieldValue.delete(),
-                        guestName: firebase.firestore.FieldValue.delete(),
-                        guestPhoto: firebase.firestore.FieldValue.delete(),
-                        guestChar: firebase.firestore.FieldValue.delete(),
-                        guestPeerId: firebase.firestore.FieldValue.delete()
-                    });
-                    sendPeerMessage({ type: 'GUEST_LEFT' });
-                }
-            } catch (error) {
-                console.log('Error handling room leave:', error);
-            }
-
-            if (dataConnection) { dataConnection.close(); }
-            goHome();
-        });
-
-        // Back home button
-        backHomeBtn.addEventListener('click', goHome);
-
-        // Logout
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut().then(() => {
-                loginScreen.style.display = 'flex';
-                homeScreen.style.display = 'none';
-                roomScreen.style.display = 'none';
-                currentUser = null;
-                gameState = {
-                    mode: null,
-                    roomCode: null,
-                    roomName: null,
-                    hostName: null,
-                    hostUid: null,
-                    hostPhoto: null,
-                    hostChar: null,
-                    guestName: null,
-                    guestUid: null,
-                    guestPhoto: null,
-                    guestChar: null,
-                    myScore: 0,
-                    opponentScore: 0,
-                    myHealth: 10,
-                    opponentHealth: 10,
-                    myStreak: 0,
-                    opponentStreak: 0,
-                    difficulty: 1,
-                    bossHealth: 5,
-                    timeRemaining: 50,
-                    isHost: false,
-                    isReady: false,
-                    opponentReady: false,
-                    selectedChar: null,
-                    currentQuestion: null,
-                    gameActive: false
-                };
-            });
-        });
-
-        // Handle beforeunload - clean up room on page close
-        window.addEventListener('beforeunload', () => {
-            if (!currentRoom) return;
-            // Use sendBeacon for reliable cleanup
-            const roomRef = db.collection('rooms').doc(currentRoom);
-            if (gameState.isHost) {
-                // If guest exists, transfer host; otherwise delete
-                // Note: sendBeacon can't do complex logic, so we mark room for cleanup
-                navigator.sendBeacon && navigator.sendBeacon('about:blank'); // trigger
-                roomRef.get().then(doc => {
-                    if (!doc.exists) return;
-                    const data = doc.data();
-                    if (data.guestUid) {
-                        roomRef.update({
-                            hostUid: data.guestUid,
-                            hostName: data.guestName || '사용자',
-                            hostPhoto: data.guestPhoto || '',
-                            hostChar: data.guestChar || '',
-                            guestUid: firebase.firestore.FieldValue.delete(),
-                            guestName: firebase.firestore.FieldValue.delete(),
-                            guestPhoto: firebase.firestore.FieldValue.delete(),
-                            guestChar: firebase.firestore.FieldValue.delete(),
-                            playerCount: 1,
-                            status: 'waiting'
-                        });
-                    } else {
-                        roomRef.delete();
-                    }
-                });
-            } else {
-                roomRef.update({
-                    playerCount: 1,
-                    status: 'waiting',
-                    guestUid: firebase.firestore.FieldValue.delete(),
-                    guestName: firebase.firestore.FieldValue.delete(),
-                    guestPhoto: firebase.firestore.FieldValue.delete(),
-                    guestChar: firebase.firestore.FieldValue.delete()
-                }).catch(() => {});
-            }
-        });
-
-        // Load ranking
-        function loadRanking() {
-            db.collection('users')
-                .orderBy('points', 'desc')
-                .limit(5)
-                .onSnapshot((snapshot) => {
-                    let html = '';
-                    let rank = 1;
-                    const medals = ['🥇','🥈','🥉'];
-                    snapshot.forEach((doc) => {
-                        const user = doc.data();
-                        const pts = (typeof user.points === 'number') ? user.points : 0;
-                        const isMe = currentUser && doc.id === currentUser.uid;
-                        const medal = rank <= 3 ? medals[rank-1] : `#${rank}`;
-                        const bgColor = isMe ? '#EDE7FF' : (rank === 1 ? '#FFF8E1' : 'transparent');
-                        const border = rank === 1 ? 'border:2px solid #FFD700;' : isMe ? 'border:2px solid #667eea;' : '';
-                        html += `
-                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:${bgColor};${border}cursor:pointer;" onclick="showFullRanking()">
-                                <span style="font-size:${rank<=3?'22px':'14px'};min-width:32px;text-align:center;font-weight:900;">${medal}</span>
-                                <img src="${user.photo || 'https://via.placeholder.com/32'}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
-                                <span style="flex:1;font-weight:${isMe?'900':'600'};font-size:14px;color:${isMe?'#5C4B99':'#333'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.name || '?')}${isMe?' (나)':''}</span>
-                                <span style="font-weight:900;font-size:14px;color:${rank===1?'#E65100':'#667eea'};">${pts}P</span>
-                            </div>
-                        `;
-                        rank++;
-                    });
-                    if (!html) html = '<div style="text-align:center;padding:16px;color:#999;">아직 랭킹이 없습니다</div>';
-                    document.getElementById('rankingContainer').innerHTML = html;
-                }, (error) => {
-                    console.error('Error loading ranking:', error);
-                    document.getElementById('rankingContainer').innerHTML = '<div style="text-align:center;padding:16px;color:#999;">순위를 불러올 수 없습니다.</div>';
-                });
-        }
-
-        // Show full ranking modal
-        function showFullRanking() {
-            document.getElementById('rankingModal').classList.add('active');
-            db.collection('users').orderBy('points', 'desc').limit(50).get().then((snapshot) => {
-                let html = '';
-                let rank = 1;
-                const medals = ['🥇','🥈','🥉'];
-                snapshot.forEach((doc) => {
-                    const user = doc.data();
-                    const pts = (typeof user.points === 'number') ? user.points : 0;
-                    const isMe = currentUser && doc.id === currentUser.uid;
-                    const medal = rank <= 3 ? medals[rank-1] : `${rank}`;
-                    const bgColor = isMe ? '#EDE7FF' : (rank <= 3 ? '#FFFDE7' : (rank % 2 === 0 ? '#FAFAFA' : 'white'));
-                    html += `
-                        <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;margin-bottom:4px;background:${bgColor};${isMe?'border:2px solid #667eea;':''}">
-                            <span style="font-size:${rank<=3?'20px':'13px'};min-width:36px;text-align:center;font-weight:900;color:${rank<=3?'inherit':'#888'};">${medal}</span>
-                            <img src="${user.photo || 'https://via.placeholder.com/32'}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
-                            <div style="flex:1;overflow:hidden;">
-                                <div style="font-weight:${isMe?'900':'600'};font-size:14px;color:${isMe?'#5C4B99':'#333'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.name || '?')}${isMe?' 👈 나':''}</div>
-                                <div style="font-size:11px;color:#999;">게임 ${user.gamesPlayed||0}회 · 승 ${user.wins||0}회</div>
-                            </div>
-                            <span style="font-weight:900;font-size:16px;color:${rank===1?'#E65100':rank<=3?'#F57C00':'#667eea'};">${pts}P</span>
-                        </div>
-                    `;
-                    rank++;
-                });
-                if (!html) html = '<div style="text-align:center;padding:20px;color:#999;">랭킹 데이터가 없습니다</div>';
-                document.getElementById('fullRankingList').innerHTML = html;
-            }).catch((error) => {
-                document.getElementById('fullRankingList').innerHTML = '<div style="text-align:center;padding:20px;color:#999;">랭킹을 불러올 수 없습니다</div>';
-            });
-        }
-
-        function closeFullRanking() {
-            document.getElementById('rankingModal').classList.remove('active');
-        }
-
-        // ═══ PROFILE MODAL ═══
-        async function showProfileModal() {
-            if (!currentUser) return;
-            const modal = document.getElementById('profileModal');
-            document.getElementById('profileModalAvatar').src = currentUser.photoURL || 'https://via.placeholder.com/64';
-            document.getElementById('profileModalEmail').textContent = currentUser.email || '';
-
-            // Load current data from Firestore
-            try {
-                const doc = await db.collection('users').doc(currentUser.uid).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('profileNickname').value = data.name || currentUser.displayName || '';
-                    document.getElementById('profilePoints').textContent = (typeof data.points === 'number' ? data.points : 0) + 'P';
-                    document.getElementById('profileGames').textContent = (data.gamesPlayed || 0) + '회';
-                    document.getElementById('profileWins').textContent = (data.wins || 0) + '회';
-                } else {
-                    document.getElementById('profileNickname').value = currentUser.displayName || '';
-                }
-            } catch (e) {
-                document.getElementById('profileNickname').value = currentUser.displayName || '';
-            }
-
-            modal.classList.add('active');
-            document.getElementById('profileNickname').focus();
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.remove('active');
-        }
-
-        async function saveProfile() {
-            const nickname = document.getElementById('profileNickname').value.trim();
-            if (!nickname) { alert('닉네임을 입력해주세요!'); return; }
-            if (nickname.length < 1 || nickname.length > 12) { alert('닉네임은 1~12자로 입력해주세요.'); return; }
-
-            try {
-                await db.collection('users').doc(currentUser.uid).update({
-                    name: nickname
-                });
-                // Update local state
-                currentUser.displayName = nickname;
-                document.getElementById('userName').textContent = nickname;
-                closeProfileModal();
-                alert('닉네임이 변경되었습니다: ' + nickname);
-                loadRanking(); // Refresh ranking to show new name
-            } catch (error) {
-                alert('저장 실패: ' + error.message);
-            }
-        }
-
-        // Initialize
-        window.addEventListener('load', () => {
-            loadingScreen.style.display = 'flex';
-            loginScreen.style.display = 'none';
-            homeScreen.style.display = 'none';
-            roomScreen.style.display = 'none';
-
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = {
-                        uid: user.uid,
-                        email: user.email,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL
-                    };
-                    setupUserSession(currentUser);
-                } else {
-                    loadingScreen.style.display = 'none';
-                    initGoogleSignIn();
-                }
-            });
-
-            loadRanking();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
