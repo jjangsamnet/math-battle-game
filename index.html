@@ -2731,6 +2731,7 @@
             roomScreen.classList.remove('active');
 
             gameState.gameActive = true;
+            gameEnded = false; // Reset end flag
             gameState.myScore = 0;
             gameState.opponentScore = 0;
             gameState.myHealth = 10;
@@ -2809,7 +2810,9 @@
             } else if (data.type === 'INCORRECT') {
                 handleOpponentIncorrect();
             } else if (data.type === 'GAME_END') {
-                handleGameEnd(data);
+                // Opponent sent GAME_END - reverse the result for me
+                const myResult = data.result === 'win' ? 'lose' : data.result === 'lose' ? 'win' : 'draw';
+                endGame(myResult, true); // fromPeer = true
             }
         }
 
@@ -3116,8 +3119,11 @@
             surrenderModal.classList.remove('active');
         });
 
-        // End Game
-        async function endGame(result) {
+        // End Game (fromPeer=true means opponent triggered the end)
+        let gameEnded = false;
+        async function endGame(result, fromPeer) {
+            if (gameEnded) return; // Prevent double-end
+            gameEnded = true;
             gameState.gameActive = false;
             if (questionTimerInterval) {
                 clearInterval(questionTimerInterval);
@@ -3149,12 +3155,15 @@
             document.getElementById('opponentFinalScore').textContent = gameState.opponentScore;
             document.getElementById('pointsEarned').textContent = '+' + pointsEarned;
 
-            sendPeerMessage({
-                type: 'GAME_END',
-                result: result,
-                myScore: gameState.myScore,
-                opponentScore: gameState.opponentScore
-            });
+            // Only send GAME_END if I initiated the end (not received from peer)
+            if (!fromPeer) {
+                sendPeerMessage({
+                    type: 'GAME_END',
+                    result: result,
+                    myScore: gameState.myScore,
+                    opponentScore: gameState.opponentScore
+                });
+            }
 
             // Update stats
             if (currentUser) {
