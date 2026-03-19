@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수학배틀 - 관리자 페이지</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1b3f 0%, #2d2654 50%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #7c3aed;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #a78bfa;
+            text-shadow: 0 2px 8px rgba(167, 139, 250, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(124, 58, 237, 0.2);
+            border-radius: 8px;
+            border: 1px solid #7c3aed;
+        }
+
+        .user-info span {
+            color: #a78bfa;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ef4444;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a78bfa;
+            border: 1px solid #7c3aed;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(124, 58, 237, 0.3);
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 20px;
+            background: transparent;
+            color: #999;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            color: #a78bfa;
+            border-bottom-color: #7c3aed;
+        }
+
+        .nav-tab:hover {
+            color: #c4b5fd;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(124, 58, 237, 0.15);
+            border: 1px solid #7c3aed;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            color: #a78bfa;
+            font-weight: bold;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #7c3aed;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .search-box input::placeholder {
+            color: #666;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #a78bfa;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            background: rgba(45, 38, 84, 0.5);
+            border-radius: 10px;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            padding: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: rgba(124, 58, 237, 0.3);
+        }
+
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            color: #a78bfa;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 2px solid #7c3aed;
+        }
+
+        th:hover {
+            background: rgba(124, 58, 237, 0.4);
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+        }
+
+        tr:hover {
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 5px 10px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2d2654 0%, #1e1b3f 100%);
+            border: 2px solid #7c3aed;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #7c3aed;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #a78bfa;
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #a78bfa;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a78bfa;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #7c3aed;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #a78bfa;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(124, 58, 237, 0.3);
+            border-top-color: #7c3aed;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .today-login {
+            background: rgba(34, 197, 94, 0.15) !important;
+            border-left: 3px solid #22c55e;
+        }
+
+        .timestamp {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .rank-table {
+            margin-top: 20px;
+        }
+
+        .home-link {
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .home-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>관리자 대시보드</h1>
+            <div class="header-actions">
+                <div class="user-info">
+                    <span id="userEmail">로딩중...</span>
+                </div>
+                <button class="btn-primary" id="logoutBtn">로그아웃</button>
+                <button class="btn-secondary" onclick="goHome()">돌아가기</button>
+            </div>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('members')">회원 관리</button>
+            <button class="nav-tab" onclick="switchTab('stats')">전체 통계</button>
+            <button class="nav-tab" onclick="switchTab('access')">접속 현황</button>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="members" class="tab-content active">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="닉네임 또는 이메일로 검색...">
+                <select id="sortBy" style="padding: 10px 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid #7c3aed; border-radius: 6px; color: #e0e0e0;">
+                    <option value="nickname">닉네임순</option>
+                    <option value="points">포인트순</option>
+                    <option value="games">게임수순</option>
+                    <option value="wins">승수순</option>
+                    <option value="lastLogin">최근 접속순</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('nickname')">닉네임</th>
+                            <th onclick="sortTable('email')">이메일</th>
+                            <th onclick="sortTable('points')">포인트</th>
+                            <th onclick="sortTable('gamesPlayed')">게임수</th>
+                            <th onclick="sortTable('wins')">승수</th>
+                            <th onclick="sortTable('lastLogin')">마지막 접속</th>
+                            <th onclick="sortTable('createdAt')">가입일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        <tr class="loading">
+                            <td colspan="8"><div class="spinner"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>전체 회원수</h3>
+                    <div class="value" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>총 게임 횟수</h3>
+                    <div class="value" id="totalGames">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>평균 포인트</h3>
+                    <div class="value" id="avgPoints">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>최활발 회원</h3>
+                    <div class="value" id="mostActive" style="font-size: 16px;">-</div>
+                </div>
+            </div>
+
+            <h2 style="color: #a78bfa; margin-bottom: 20px;">상위 5명 순위</h2>
+            <div class="table-wrapper">
+                <table class="rank-table">
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>닉네임</th>
+                            <th>포인트</th>
+                            <th>게임수</th>
+                            <th>승수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankBody">
+                        <tr class="loading">
+                            <td colspan="5"><div class="spinner"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Access Log Tab -->
+        <div id="access" class="tab-content">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>닉네임</th>
+                            <th>이메일</th>
+                            <th>최근 접속</th>
+                            <th>포인트</th>
+                            <th>게임수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accessBody">
+                        <tr class="loading">
+                            <td colspan="5"><div class="spinner"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="pointsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>포인트 조정</h2>
+                <button class="close-btn" onclick="closeModal('pointsModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>현재 포인트</label>
+                <input type="text" id="currentPoints" readonly style="background: rgba(255, 255, 255, 0.05);">
+            </div>
+            <div class="form-group">
+                <label>포인트 변경 (음수 입력 가능)</label>
+                <input type="number" id="pointsChange" placeholder="예: 100 또는 -50">
+            </div>
+            <div class="form-group">
+                <label>사유</label>
+                <textarea id="pointsReason" placeholder="포인트 조정 사유를 입력하세요"></textarea>
+            </div>
+            <div class="form-group">
+                <label>조정 후 포인트</label>
+                <input type="text" id="newPoints" readonly style="background: rgba(255, 255, 255, 0.05);">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('pointsModal')">취소</button>
+                <button class="btn-primary" onclick="confirmPointsChange()">적용</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resetPointsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>포인트 초기화</h2>
+                <button class="close-btn" onclick="closeModal('resetPointsModal')">&times;</button>
+            </div>
+            <p style="color: #e0e0e0; margin-bottom: 20px;">
+                <strong id="resetUserName"></strong>의 포인트를 0으로 초기화하시겠습니까?<br>
+                <span style="color: #999; font-size: 13px;">이 작업은 되돌릴 수 없습니다.</span>
+            </p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('resetPointsModal')">취소</button>
+                <button class="btn-danger" onclick="confirmResetPoints()">초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>회원 강퇴</h2>
+                <button class="close-btn" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <p style="color: #e0e0e0; margin-bottom: 20px;">
+                정말 <strong id="deleteUserName"></strong>을(를) 강퇴하시겠습니까?<br>
+                <span style="color: #ef4444; font-size: 13px;">⚠ 이 작업은 되돌릴 수 없습니다.</span>
+            </p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('deleteModal')">취소</button>
+                <button class="btn-danger" onclick="confirmDelete()">강퇴</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4LGBS2A-LnLK0vhaNenDYsjYuCps_zhQ",
+            authDomain: "math-battle-game-2df66.firebaseapp.com",
+            projectId: "math-battle-game-2df66",
+            storageBucket: "math-battle-game-2df66.firebasestorage.app",
+            messagingSenderId: "649914533086",
+            appId: "1:649914533086:web:05964c02933229ae50ee4f"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let allUsers = [];
+        let currentSortBy = 'nickname';
+        let currentModalUser = null;
+
+        // Initialize
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                showGoogleLogin();
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            // Check admin status
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (!userDoc.exists || !userDoc.data().isAdmin) {
+                showNoAdminAccess();
+                return;
+            }
+
+            loadUsers();
+            loadStats();
+            loadAccessLog();
+        });
+
+        function showGoogleLogin() {
+            document.body.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; gap: 20px;">
+                    <h1 style="color: #a78bfa; font-size: 28px;">관리자 페이지</h1>
+                    <p style="color: #999; margin-bottom: 20px;">Google 계정으로 로그인하세요</p>
+                    <button class="btn-primary" style="padding: 12px 30px; font-size: 16px;" onclick="googleLogin()">Google로 로그인</button>
+                </div>
+            `;
+        }
+
+        function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .catch(error => alert('로그인 실패: ' + error.message));
+        }
+
+        function showNoAdminAccess() {
+            document.body.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; gap: 20px;">
+                    <h1 style="color: #ef4444; font-size: 28px;">관리자 권한이 없습니다</h1>
+                    <p style="color: #999; margin-bottom: 20px;">이 페이지는 관리자만 접근할 수 있습니다.</p>
+                    <button class="btn-secondary" onclick="window.location.href = 'index.html'">메인 페이지로</button>
+                </div>
+            `;
+        }
+
+        async function loadUsers() {
+            try {
+                const snapshot = await db.collection('users').get();
+                allUsers = [];
+                snapshot.forEach(doc => {
+                    allUsers.push({ id: doc.id, ...doc.data() });
+                });
+                displayUsers();
+            } catch (error) {
+                console.error('Error loading users:', error);
+                alert('회원 정보를 불러올 수 없습니다.');
+            }
+        }
+
+        function displayUsers() {
+            const tbody = document.getElementById('usersBody');
+            let filtered = allUsers;
+
+            // Search filter
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(u =>
+                    (u.nickname || '').toLowerCase().includes(searchTerm) ||
+                    (u.email || '').toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Sort
+            const sortBy = document.getElementById('sortBy').value;
+            filtered.sort((a, b) => {
+                let aVal = a[sortBy] || 0;
+                let bVal = b[sortBy] || 0;
+                if (typeof aVal === 'string') {
+                    return aVal.localeCompare(bVal);
+                }
+                return bVal - aVal;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr class="empty-state"><td colspan="8">회원이 없습니다</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(user => `
+                <tr>
+                    <td><strong>${user.nickname || '(미설정)'}</strong></td>
+                    <td>${user.email}</td>
+                    <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
+                    <td>${user.gamesPlayed || 0}</td>
+                    <td>${user.wins || 0}</td>
+                    <td class="timestamp">${formatTime(user.lastLogin)}</td>
+                    <td class="timestamp">${formatDate(user.createdAt)}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-action btn-primary" onclick="openPointsModal('${user.id}', ${user.points || 0}, '${user.nickname}')">포인트</button>
+                            <button class="btn-action btn-secondary" onclick="openResetModal('${user.id}', '${user.nickname}')">초기화</button>
+                            <button class="btn-action ${user.isAdmin ? 'btn-danger' : 'btn-primary'}" onclick="toggleAdmin('${user.id}', ${user.isAdmin})">${user.isAdmin ? '해제' : '지정'}</button>
+                            <button class="btn-action btn-danger" onclick="openDeleteModal('${user.id}', '${user.nickname}')">강퇴</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadStats() {
+            try {
+                const snapshot = await db.collection('users').get();
+                let totalUsers = 0;
+                let totalGames = 0;
+                let totalPoints = 0;
+                let mostActiveUser = null;
+                let maxGames = 0;
+
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    totalUsers++;
+                    totalGames += user.gamesPlayed || 0;
+                    totalPoints += user.points || 0;
+
+                    if ((user.gamesPlayed || 0) > maxGames) {
+                        maxGames = user.gamesPlayed || 0;
+                        mostActiveUser = user.nickname || user.email;
+                    }
+                });
+
+                document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('totalGames').textContent = totalGames;
+                document.getElementById('avgPoints').textContent = Math.round(totalPoints / (totalUsers || 1));
+                document.getElementById('mostActive').textContent = mostActiveUser || '-';
+
+                // Top 5 ranking
+                const ranked = allUsers
+                    .sort((a, b) => (b.points || 0) - (a.points || 0))
+                    .slice(0, 5);
+
+                const tbody = document.getElementById('rankBody');
+                tbody.innerHTML = ranked.map((user, idx) => `
+                    <tr>
+                        <td><strong style="color: #fbbf24;">#${idx + 1}</strong></td>
+                        <td>${user.nickname || user.email}</td>
+                        <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
+                        <td>${user.gamesPlayed || 0}</td>
+                        <td>${user.wins || 0}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadAccessLog() {
+            const tbody = document.getElementById('accessBody');
+            try {
+                const sorted = allUsers
+                    .sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+
+                if (sorted.length === 0) {
+                    tbody.innerHTML = '<tr class="empty-state"><td colspan="5">기록이 없습니다</td></tr>';
+                    return;
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                tbody.innerHTML = sorted.map(user => {
+                    const isToday = user.lastLogin && new Date(user.lastLogin * 1000) >= today;
+                    return `
+                        <tr ${isToday ? 'class="today-login"' : ''}>
+                            <td><strong>${user.nickname || '(미설정)'}</strong></td>
+                            <td>${user.email}</td>
+                            <td class="timestamp">${formatTime(user.lastLogin)}</td>
+                            <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
+                            <td>${user.gamesPlayed || 0}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading access log:', error);
+            }
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '미접속';
+            const date = new Date(timestamp * 1000);
+            const now = new Date();
+            const diff = now - date;
+
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return '방금 전';
+            if (minutes < 60) return minutes + '분 전';
+            if (hours < 24) return hours + '시간 전';
+            if (days < 30) return days + '일 전';
+
+            return date.toLocaleDateString('ko-KR');
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleDateString('ko-KR');
+        }
+
+        function openPointsModal(userId, currentPoints, nickname) {
+            currentModalUser = { id: userId, nickname };
+            document.getElementById('currentPoints').value = currentPoints;
+            document.getElementById('pointsChange').value = '';
+            document.getElementById('pointsReason').value = '';
+            updateNewPoints();
+            document.getElementById('pointsModal').classList.add('show');
+        }
+
+        function updateNewPoints() {
+            const current = parseInt(document.getElementById('currentPoints').value) || 0;
+            const change = parseInt(document.getElementById('pointsChange').value) || 0;
+            document.getElementById('newPoints').value = current + change;
+        }
+
+        async function confirmPointsChange() {
+            if (!currentModalUser) return;
+            const change = parseInt(document.getElementById('pointsChange').value);
+            const reason = document.getElementById('pointsReason').value;
+
+            if (isNaN(change)) {
+                alert('유효한 숫자를 입력하세요');
+                return;
+            }
+
+            if (!reason.trim()) {
+                alert('사유를 입력하세요');
+                return;
+            }
+
+            try {
+                const userRef = db.collection('users').doc(currentModalUser.id);
+                const userDoc = await userRef.get();
+                const currentPoints = userDoc.data().points || 0;
+                const newPoints = Math.max(0, currentPoints + change);
+
+                await userRef.update({
+                    points: newPoints,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                closeModal('pointsModal');
+                alert('포인트가 변경되었습니다');
+                loadUsers();
+                loadStats();
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        function openResetModal(userId, nickname) {
+            currentModalUser = { id: userId, nickname };
+            document.getElementById('resetUserName').textContent = nickname;
+            document.getElementById('resetPointsModal').classList.add('show');
+        }
+
+        async function confirmResetPoints() {
+            if (!currentModalUser) return;
+            try {
+                await db.collection('users').doc(currentModalUser.id).update({
+                    points: 0,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                closeModal('resetPointsModal');
+                alert('포인트가 초기화되었습니다');
+                loadUsers();
+                loadStats();
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        async function toggleAdmin(userId, currentIsAdmin) {
+            if (!confirm(currentIsAdmin ? '관리자 권한을 해제하시겠습니까?' : '관리자로 지정하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                await db.collection('users').doc(userId).update({
+                    isAdmin: !currentIsAdmin
+                });
+                alert(currentIsAdmin ? '관리자 권한이 해제되었습니다' : '관리자로 지정되었습니다');
+                loadUsers();
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        function openDeleteModal(userId, nickname) {
+            currentModalUser = { id: userId, nickname };
+            document.getElementById('deleteUserName').textContent = nickname;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        async function confirmDelete() {
+            if (!currentModalUser) return;
+            try {
+                await db.collection('users').doc(currentModalUser.id).delete();
+                closeModal('deleteModal');
+                alert('회원이 강퇴되었습니다');
+                loadUsers();
+                loadStats();
+                loadAccessLog();
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            currentModalUser = null;
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+
+        document.getElementById('searchInput').addEventListener('input', displayUsers);
+        document.getElementById('sortBy').addEventListener('change', displayUsers);
+        document.getElementById('pointsChange').addEventListener('input', updateNewPoints);
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
