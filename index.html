@@ -2593,10 +2593,28 @@
             gameEnd.classList.remove('active');
             roomWaiting.classList.add('active');
 
-            document.getElementById('player1Char').textContent = gameState.hostChar || '🧙';
-            document.getElementById('player1Name').textContent = gameState.hostName || 'Player 1';
-            document.getElementById('player2Char').textContent = gameState.selectedChar || '🧙';
-            document.getElementById('player2Name').textContent = currentUser ? (currentUser.displayName || 'You') : (gameState.guestName || 'Player 2');
+            // Display players correctly based on perspective
+            if (gameState.isHost) {
+                // I am host: left=me, right=guest
+                const myName = currentUser ? currentUser.displayName : (gameState.guestName || 'Player 1');
+                const myChar = gameState.selectedChar || gameState.hostChar || '🧙';
+                const oppName = gameState.guestName || '상대 대기중...';
+                const oppChar = gameState.guestChar || '❓';
+                document.getElementById('player1Char').textContent = myChar;
+                document.getElementById('player1Name').textContent = myName;
+                document.getElementById('player2Char').textContent = oppChar;
+                document.getElementById('player2Name').textContent = oppName;
+            } else {
+                // I am guest: left=host, right=me
+                const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player 2');
+                const myChar = gameState.selectedChar || gameState.guestChar || '🧙';
+                const oppName = gameState.hostName || 'Host';
+                const oppChar = gameState.hostChar || '❓';
+                document.getElementById('player1Char').textContent = oppChar;
+                document.getElementById('player1Name').textContent = oppName;
+                document.getElementById('player2Char').textContent = myChar;
+                document.getElementById('player2Name').textContent = myName;
+            }
             gameState.isReady = false;
 
             // Setup waiting ready button
