@@ -2706,8 +2706,23 @@
         // Handle Peer Connection
         function handlePeerConnection(conn) {
             dataConnection = conn;
+            setupDataConnection();
+        }
+
+        // Setup data connection event listeners
+        function setupDataConnection() {
+            if (!dataConnection) return;
+            dataConnection.on('open', () => {
+                console.log('PeerJS data connection open');
+            });
             dataConnection.on('data', (data) => {
                 handlePeerMessage(data);
+            });
+            dataConnection.on('close', () => {
+                console.log('PeerJS connection closed');
+            });
+            dataConnection.on('error', (err) => {
+                console.error('PeerJS data error:', err);
             });
         }
 
