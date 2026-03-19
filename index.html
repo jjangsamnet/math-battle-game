@@ -1334,27 +1334,23 @@
         </div>
     </div>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js"></script>
-
-    <!-- Google Sign-In -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Firebase (compat SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <!-- PeerJS -->
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 
     <script>
         // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAK8-KhP6pcsAp8KVcqHpK3pFyZx1nBKls",
-            authDomain: "mathbattle-e9b21.firebaseapp.com",
-            projectId: "mathbattle-e9b21",
-            storageBucket: "mathbattle-e9b21.appspot.com",
-            messagingSenderId: "1062316761873",
-            appId: "1:1062316761873:web:a91e9c3c08c0d9e3b3f14e",
-            measurementId: "G-5B3QLRXEFY"
+            apiKey: "AIzaSyB4LGBS2A-LnLK0vhaNenDYsjYuCps_zhQ",
+            authDomain: "math-battle-game-2df66.firebaseapp.com",
+            projectId: "math-battle-game-2df66",
+            storageBucket: "math-battle-game-2df66.firebasestorage.app",
+            messagingSenderId: "649914533086",
+            appId: "1:649914533086:web:05964c02933229ae50ee4f"
         };
 
         // Initialize Firebase
@@ -1461,84 +1457,20 @@
         const surrenderConfirmBtn = document.getElementById('surrenderConfirmBtn');
         const surrenderCancelBtn = document.getElementById('surrenderCancelBtn');
 
-        // Initialize Google Sign-In
+        // Initialize Google Sign-In (Firebase Auth signInWithPopup)
         function initGoogleSignIn() {
-            window.google.accounts.id.initialize({
-                client_id: '1062316761873-pf0rv7lljr4nj32dgljvsf0i6lj3mf9i.apps.googleusercontent.com',
-                callback: handleCredentialResponse
-            });
-            window.google.accounts.id.renderButton(
-                googleLoginBtn.parentElement,
-                { theme: "outline", size: "large", text: "signin_with" }
-            );
+            loginScreen.style.display = 'flex';
+            googleLoginBtn.onclick = loginWithGoogle;
         }
 
-        async function handleCredentialResponse(response) {
+        async function loginWithGoogle() {
             try {
-                const credential = response.credential;
-                const base64Url = credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                const userInfo = JSON.parse(jsonPayload);
-
-                const result = await auth.signInWithCustomToken(credential).catch(() => {
-                    return new Promise((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=AIzaSyAK8-KhP6pcsAp8KVcqHpK3pFyZx1nBKls');
-                        xhr.setRequestHeader('Content-Type', 'application/json');
-                        xhr.onload = () => {
-                            try {
-                                const data = JSON.parse(xhr.responseText);
-                                const user = {
-                                    uid: data.localId,
-                                    email: userInfo.email,
-                                    displayName: userInfo.name,
-                                    photoURL: userInfo.picture
-                                };
-                                currentUser = user;
-                                setupUserSession(user);
-                                resolve();
-                            } catch (e) {
-                                auth.signInAnonymously().then(r => {
-                                    currentUser = {
-                                        uid: r.user.uid,
-                                        email: userInfo.email,
-                                        displayName: userInfo.name,
-                                        photoURL: userInfo.picture
-                                    };
-                                    setupUserSession(currentUser);
-                                    resolve();
-                                });
-                            }
-                        };
-                        xhr.onerror = () => reject(xhr.statusText);
-                        xhr.send(JSON.stringify({
-                            postBody: `id_token=${credential}&providerId=google.com`,
-                            returnSecureToken: true
-                        }));
-                    });
-                });
-
-                if (result) {
-                    currentUser = {
-                        uid: result.user.uid,
-                        email: userInfo.email,
-                        displayName: userInfo.name,
-                        photoURL: userInfo.picture
-                    };
-                }
-                setupUserSession(currentUser);
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
+                // onAuthStateChanged will handle the rest
             } catch (error) {
-                console.error('Sign-in error:', error);
-                auth.signInAnonymously().then(r => {
-                    currentUser = {
-                        uid: r.user.uid,
-                        email: 'anonymous@user.local',
-                        displayName: '게스트',
-                        photoURL: 'https://via.placeholder.com/40'
-                    };
-                    setupUserSession(currentUser);
-                });
+                console.error('Google login error:', error);
+                alert('로그인 실패: ' + error.message);
             }
         }
 
@@ -1552,10 +1484,7 @@
             document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/40';
 
             // Initialize PeerJS
-            peer = new Peer(user.uid, {
-                host: 'peerjs-server.example.com',
-                port: 443,
-                secure: true,
+            peer = new Peer('mb-' + user.uid.substring(0,16) + '-' + Math.random().toString(36).substring(2,6), {
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
