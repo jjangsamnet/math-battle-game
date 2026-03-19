@@ -300,6 +300,89 @@
             color: #999;
         }
 
+        .public-rooms-container {
+            background: #F5F5F5;
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .room-card {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .room-card-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .room-host-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .room-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .room-host-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .room-mode-display {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .room-card-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lock-icon {
+            font-size: 14px;
+        }
+
+        .join-room-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .join-room-btn:active {
+            background: #5568d3;
+            transform: scale(0.95);
+        }
+
         .logout-btn {
             position: fixed;
             bottom: 20px;
@@ -357,7 +440,7 @@
             font-weight: bold;
         }
 
-        .room-input, .join-input {
+        .room-input, .join-input, .access-code-input {
             padding: 12px;
             border: 2px solid #E0E0E0;
             border-radius: 8px;
@@ -366,7 +449,7 @@
             text-transform: uppercase;
         }
 
-        .room-input:focus, .join-input:focus {
+        .room-input:focus, .join-input:focus, .access-code-input:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -486,6 +569,7 @@
             padding: 15px;
             border-radius: 12px;
             text-align: center;
+            position: relative;
         }
 
         .player-character {
@@ -511,6 +595,24 @@
         .ready-status.ready {
             background: #C8E6C9;
             color: #2E7D32;
+        }
+
+        .kick-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #FF5252;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .kick-btn:active {
+            background: #FF1744;
         }
 
         .countdown {
@@ -957,6 +1059,11 @@
                 <div class="ranking-container" id="rankingContainer">
                     <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
                 </div>
+
+                <div class="section-title">🏠 공개 방 목록</div>
+                <div class="public-rooms-container" id="publicRoomsContainer">
+                    <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
+                </div>
             </div>
 
             <button class="logout-btn" id="logoutBtn">로그아웃</button>
@@ -988,6 +1095,14 @@
                     </div>
                 </div>
 
+                <div id="accessCodeSection" style="display: none;">
+                    <div class="section-title">접속 코드 (선택사항)</div>
+                    <div class="input-group" style="margin-bottom: 20px;">
+                        <label class="input-label">4자리 코드 (미입력 시 공개 방)</label>
+                        <input type="text" class="access-code-input" id="accessCodeInput" placeholder="선택사항" maxlength="4">
+                    </div>
+                </div>
+
                 <div class="button-group">
                     <button class="primary-btn" id="createRoomBtn">방 만들기</button>
                     <button class="primary-btn" id="joinRoomBtn">입장하기</button>
@@ -1010,6 +1125,7 @@
                         <div class="player-character" id="player2Char">?</div>
                         <div class="player-name" id="player2Name">기다리는 중...</div>
                         <div class="ready-status" id="player2Status">대기 중</div>
+                        <button class="kick-btn hidden" id="kickPlayerBtn">강퇴</button>
                     </div>
                 </div>
 
@@ -1083,6 +1199,31 @@
         </div>
     </div>
 
+    <!-- Kick Player Modal -->
+    <div class="modal" id="kickModal">
+        <div class="modal-content">
+            <div class="modal-title">강퇴 확인</div>
+            <div class="modal-text">이 플레이어를 강퇴하시겠습니까?</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-confirm" id="confirmKickBtn">강퇴하기</button>
+                <button class="modal-btn modal-cancel" id="cancelKickBtn">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Code Modal -->
+    <div class="modal" id="accessCodeModal">
+        <div class="modal-content">
+            <div class="modal-title">접속 코드 입력</div>
+            <div class="modal-text">이 방은 접속 코드가 필요합니다</div>
+            <input type="text" id="accessCodePromptInput" placeholder="코드 입력" maxlength="4" style="padding: 12px; border: 2px solid #E0E0E0; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold;">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-confirm" id="confirmAccessCodeBtn">확인</button>
+                <button class="modal-btn modal-cancel" id="cancelAccessCodeBtn">취소</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Audio Toggle Button -->
     <button class="audio-toggle" id="audioToggle">🔊</button>
 
@@ -1114,6 +1255,10 @@
         let peerId = null;
         let dataConnection = null;
         let isAudioEnabled = true;
+        let roomUnsubscribe = null;
+        let roomListUnsubscribe = null;
+        let pendingAccessCode = null;
+        let pendingJoinRoomCode = null;
         let gameState = {
             isHost: false,
             roomCode: null,
@@ -1308,9 +1453,16 @@
 
         async function logout() {
             try {
+                // Cleanup room if host
+                if (gameState.roomCode && gameState.isHost) {
+                    await db.collection('rooms').doc(gameState.roomCode).delete().catch(() => {});
+                }
+
                 await auth.signOut();
                 currentUser = null;
                 gameState = {};
+                if (roomListUnsubscribe) roomListUnsubscribe();
+                if (roomUnsubscribe) roomUnsubscribe();
                 showScreen('loginScreen');
             } catch (error) {
                 console.error('Logout error:', error);
@@ -1356,6 +1508,89 @@
             }
         }
 
+        async function loadPublicRooms() {
+            try {
+                if (roomListUnsubscribe) roomListUnsubscribe();
+
+                roomListUnsubscribe = db.collection('rooms')
+                    .where('status', '==', 'waiting')
+                    .where('mode', '!=', 'speed')
+                    .onSnapshot((snapshot) => {
+                        const container = document.getElementById('publicRoomsContainer');
+                        container.innerHTML = '';
+
+                        if (snapshot.empty) {
+                            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">공개 방이 없습니다</div>';
+                            return;
+                        }
+
+                        snapshot.forEach(doc => {
+                            const room = doc.data();
+                            const modeIcon = room.mode === 'survival' ? '🛡️' : '🐉';
+                            const ops = room.ops ? room.ops.join(', ') : '';
+
+                            const card = document.createElement('div');
+                            card.className = 'room-card';
+                            card.innerHTML = `
+                                <div class="room-card-left">
+                                    <img src="${room.hostPhoto || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23667eea%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2260%22 font-size=%2270%22 text-anchor=%22middle%22 fill=%22white%22%3E👤%3C/text%3E%3C/svg%3E'}" class="room-host-avatar">
+                                    <div class="room-info">
+                                        <div class="room-host-name">${room.hostName}</div>
+                                        <div class="room-mode-display">${modeIcon} ${room.mode === 'survival' ? '서바이벌' : '보스'} ${ops}</div>
+                                    </div>
+                                </div>
+                                <div class="room-card-right">
+                                    ${room.hasPassword ? '<div class="lock-icon">🔒</div>' : ''}
+                                    <button class="join-room-btn" data-room-code="${room.roomCode}" data-has-password="${room.hasPassword}">입장</button>
+                                </div>
+                            `;
+
+                            const joinBtn = card.querySelector('.join-room-btn');
+                            joinBtn.addEventListener('click', () => handlePublicRoomJoin(room.roomCode, room.hasPassword, room.password));
+
+                            container.appendChild(card);
+                        });
+                    });
+            } catch (error) {
+                console.error('Public rooms error:', error);
+            }
+        }
+
+        async function handlePublicRoomJoin(roomCode, hasPassword, password) {
+            if (hasPassword) {
+                pendingAccessCode = password;
+                pendingJoinRoomCode = roomCode;
+                document.getElementById('accessCodeModal').classList.add('active');
+            } else {
+                document.getElementById('joinRoomCode').value = roomCode;
+                joinRoom();
+            }
+        }
+
+        async function createRoomDocument(mode, ops) {
+            const roomRef = db.collection('rooms').doc(gameState.roomCode);
+            await roomRef.set({
+                roomCode: gameState.roomCode,
+                hostName: currentUser.displayName,
+                hostPhoto: currentUser.photoURL,
+                hostUid: currentUser.uid,
+                mode: mode,
+                ops: ops,
+                hasPassword: document.getElementById('accessCodeInput').value.length > 0,
+                password: document.getElementById('accessCodeInput').value,
+                status: 'waiting',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                playerCount: 1
+            });
+
+            // Listen for opponent join
+            roomUnsubscribe = roomRef.onSnapshot((doc) => {
+                if (doc.exists && doc.data().playerCount === 2 && gameState.isHost) {
+                    // Update status to playing when both players ready
+                }
+            });
+        }
+
         async function showHomeScreen() {
             showScreen('homeScreen');
             const userDoc = await db.collection('users').doc(currentUser.uid).get();
@@ -1372,6 +1607,7 @@
             }
 
             await loadRankings();
+            await loadPublicRooms();
         }
 
         async function updateUserStats(won, pointsEarned) {
@@ -1456,6 +1692,9 @@
                     document.getElementById('player2Name').textContent = data.hostName;
                     updatePlayerReadyStatus(2, false);
                     break;
+                case 'KICKED':
+                    handleKicked();
+                    break;
             }
         }
 
@@ -1463,6 +1702,34 @@
             if (dataConnection && dataConnection.open) {
                 dataConnection.send(data);
             }
+        }
+
+        async function cleanupRoom() {
+            if (!gameState.roomCode) return;
+
+            try {
+                const roomRef = db.collection('rooms').doc(gameState.roomCode);
+                if (gameState.isHost) {
+                    // Host leaves: delete room
+                    await roomRef.delete();
+                } else {
+                    // Guest leaves: update playerCount
+                    await roomRef.update({
+                        playerCount: 1,
+                        status: 'waiting'
+                    });
+                }
+            } catch (error) {
+                console.error('Room cleanup error:', error);
+            }
+
+            if (roomUnsubscribe) roomUnsubscribe();
+        }
+
+        function handleKicked() {
+            alert('방장에 의해 강퇴되었습니다');
+            cleanupRoom();
+            showHomeScreen();
         }
 
         // Character Selection
@@ -1494,12 +1761,19 @@
 
             const modeConfig = {
                 speed: { icon: '⚡', name: '스피드 모드' },
-                survival: { icon: '🛡️', name: '서바이벌 모드' },
+                survival: { icon: '🛉️', name: '서바이벌 모드' },
                 boss: { icon: '🐉', name: '보스 모드' }
             };
 
             document.getElementById('modeIconDisplay').textContent = modeConfig[mode].icon;
             document.getElementById('modeNameDisplay').textContent = modeConfig[mode].name;
+
+            // Show access code section only for survival and boss modes
+            if (mode === 'survival' || mode === 'boss') {
+                document.getElementById('accessCodeSection').style.display = 'block';
+            } else {
+                document.getElementById('accessCodeSection').style.display = 'none';
+            }
 
             showScreen('roomScreen');
         }
@@ -1514,6 +1788,9 @@
             gameState.roomCode = generateRoomCode();
             gameState.score = { player1: 0, player2: 0 };
 
+            // Create room document in Firestore
+            createRoomDocument(currentGameMode, []);
+
             document.getElementById('newRoomCode').value = gameState.roomCode;
             document.getElementById('roomCodeDisplay').textContent = gameState.roomCode;
             document.getElementById('roomSetup').style.display = 'none';
@@ -1521,11 +1798,12 @@
 
             document.getElementById('player1Char').textContent = selectedCharacter;
             document.getElementById('player1Name').textContent = currentUser.displayName;
+            document.getElementById('kickPlayerBtn').classList.remove('hidden');
             updatePlayerReadyStatus(1, false);
         }
 
         function joinRoom() {
-            const code = document.getElementById('joinRoomCode').value.toUpperCase();
+            const code = pendingJoinRoomCode || document.getElementById('joinRoomCode').value.toUpperCase();
             if (!code || code.length !== 4) {
                 alert('4자리 코드를 입력해주세요!');
                 return;
@@ -1544,7 +1822,19 @@
 
             document.getElementById('player1Char').textContent = selectedCharacter;
             document.getElementById('player1Name').textContent = currentUser.displayName;
+            document.getElementById('kickPlayerBtn').classList.add('hidden');
             updatePlayerReadyStatus(1, false);
+
+            // Update room playerCount
+            db.collection('rooms').doc(code).update({
+                playerCount: 2
+            }).catch(error => {
+                console.error('Error updating room:', error);
+                alert('방을 찾을 수 없습니다');
+            });
+
+            pendingAccessCode = null;
+            pendingJoinRoomCode = null;
         }
 
         function updatePlayerReadyStatus(playerNum, ready) {
@@ -1601,6 +1891,13 @@
             gameState.difficulty = 'easy';
             gameState.correct = 0;
             gameState.incorrect = 0;
+
+            // Update room status to playing
+            if (gameState.roomCode && gameState.isHost) {
+                db.collection('rooms').doc(gameState.roomCode).update({
+                    status: 'playing'
+                }).catch(() => {});
+            }
 
             setupGameScreen();
             showScreen('gameScreen');
@@ -1756,6 +2053,13 @@
 
             updateUserStats(won, pointsEarned);
 
+            // Update room status to finished
+            if (gameState.roomCode && gameState.isHost) {
+                db.collection('rooms').doc(gameState.roomCode).update({
+                    status: 'finished'
+                }).catch(() => {});
+            }
+
             document.getElementById('resultIcon').textContent = won ? '🏆' : '😢';
             document.getElementById('resultTitle').textContent = won ? '승리!' : '패배!';
             document.getElementById('correctAnswers').textContent = gameState.correct;
@@ -1788,8 +2092,50 @@
         document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
 
         document.getElementById('cancelRoomBtn').addEventListener('click', () => {
+            cleanupRoom();
             document.getElementById('roomSetup').style.display = 'flex';
             document.getElementById('waitingRoom').style.display = 'none';
+        });
+
+        document.getElementById('kickPlayerBtn').addEventListener('click', () => {
+            document.getElementById('kickModal').classList.add('active');
+        });
+
+        document.getElementById('confirmKickBtn').addEventListener('click', () => {
+            document.getElementById('kickModal').classList.remove('active');
+            sendPeerMessage({ type: 'KICKED' });
+            // Reset player 2 card
+            document.getElementById('player2Char').textContent = '?';
+            document.getElementById('player2Name').textContent = '기다리는 중...';
+            updatePlayerReadyStatus(2, false);
+
+            // Update room playerCount
+            db.collection('rooms').doc(gameState.roomCode).update({
+                playerCount: 1,
+                status: 'waiting'
+            }).catch(() => {});
+        });
+
+        document.getElementById('cancelKickBtn').addEventListener('click', () => {
+            document.getElementById('kickModal').classList.remove('active');
+        });
+
+        document.getElementById('confirmAccessCodeBtn').addEventListener('click', () => {
+            const input = document.getElementById('accessCodePromptInput').value;
+            if (input === pendingAccessCode) {
+                document.getElementById('accessCodeModal').classList.remove('active');
+                document.getElementById('accessCodePromptInput').value = '';
+                joinRoom();
+            } else {
+                alert('접속 코드가 올바르지 않습니다');
+            }
+        });
+
+        document.getElementById('cancelAccessCodeBtn').addEventListener('click', () => {
+            document.getElementById('accessCodeModal').classList.remove('active');
+            document.getElementById('accessCodePromptInput').value = '';
+            pendingAccessCode = null;
+            pendingJoinRoomCode = null;
         });
 
         document.getElementById('surrenderBtn').addEventListener('click', () => {
@@ -1808,10 +2154,19 @@
         });
 
         document.getElementById('playAgainBtn').addEventListener('click', () => {
+            cleanupRoom();
             setupRoom(currentGameMode);
         });
 
-        document.getElementById('homeBtn').addEventListener('click', showHomeScreen);
+        document.getElementById('homeBtn').addEventListener('click', () => {
+            cleanupRoom();
+            showHomeScreen();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            cleanupRoom();
+        });
 
         // Initialize
         function initialize() {
