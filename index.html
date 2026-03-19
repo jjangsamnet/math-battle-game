@@ -1126,7 +1126,7 @@
                     <button class="game-mode-btn" data-mode="speed">
                         <div class="mode-icon">⚡</div>
                         <div class="mode-name">스피드 모드</div>
-                        <div class="mode-desc">30초 안에 뺄셈을 가장 많이 풀기</div>
+                        <div class="mode-desc">50초 안에 뺄셈을 가장 많이 풀기</div>
                     </button>
                     <button class="game-mode-btn" data-mode="survival">
                         <div class="mode-icon">🛡️</div>
@@ -1145,13 +1145,31 @@
                     <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
                 </div>
 
-                <div class="section-title">🏆 순위</div>
-                <div class="ranking-container" id="rankingContainer">
+                <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>🏆 실시간 랭킹</span>
+                    <span onclick="showFullRanking()" style="font-size:12px;color:#667eea;cursor:pointer;font-weight:normal;">전체 순위 보기 →</span>
+                </div>
+                <div class="ranking-container" id="rankingContainer" style="background:linear-gradient(135deg,#f8f6ff,#eef0ff);border-radius:12px;padding:12px;border:2px solid #ddd8f0;">
                     <div style="text-align: center; padding: 20px; color: #999;">로딩 중...</div>
                 </div>
             </div>
 
             <button class="logout-btn" id="logoutBtn">로그아웃</button>
+        </div>
+
+        <!-- Full Ranking Modal -->
+        <div class="modal" id="rankingModal">
+            <div style="background:white;border-radius:20px;max-width:420px;width:90%;max-height:80vh;margin:auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:20px;text-align:center;">
+                    <div style="font-size:28px;">🏆</div>
+                    <div style="font-size:20px;font-weight:900;">전체 랭킹</div>
+                    <div style="font-size:12px;opacity:0.8;">뺄셈의 제왕 포인트 순위</div>
+                </div>
+                <div id="fullRankingList" style="padding:12px;overflow-y:auto;max-height:55vh;"></div>
+                <div style="padding:12px;text-align:center;">
+                    <button onclick="closeFullRanking()" style="padding:10px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">닫기</button>
+                </div>
+            </div>
         </div>
 
         <!-- Room Screen -->
@@ -1243,7 +1261,7 @@
                         <div class="player-header-name" id="player1Name">-</div>
                         <div class="timer" id="player1Score">0</div>
                     </div>
-                    <div class="timer" id="gameTimer">30</div>
+                    <div class="timer" id="gameTimer">50</div>
                     <div class="player-header">
                         <img id="player2Avatar" class="player-header-avatar" src="" alt="플레이어">
                         <div class="player-header-name" id="player2Name">-</div>
@@ -1396,7 +1414,7 @@
             myStreak: 0,
             opponentStreak: 0,
             difficulty: 1,
-            timeRemaining: 30,
+            timeRemaining: 50,
             isHost: false,
             isReady: false,
             opponentReady: false,
@@ -2274,7 +2292,7 @@
             gameState.opponentStreak = 0;
             gameState.difficulty = 1;
             gameState.bossHealth = 5;
-            gameState.timeRemaining = 30;
+            gameState.timeRemaining = 50;
 
             countdown.classList.remove('active');
             gameScreen.classList.add('active');
@@ -2722,7 +2740,7 @@
                     opponentStreak: 0,
                     difficulty: 1,
                     bossHealth: 5,
-                    timeRemaining: 30,
+                    timeRemaining: 50,
                     isHost: false,
                     isReady: false,
                     opponentReady: false,
@@ -2778,28 +2796,71 @@
         function loadRanking() {
             db.collection('users')
                 .orderBy('points', 'desc')
-                .limit(10)
+                .limit(5)
                 .onSnapshot((snapshot) => {
-                    let html = '<div class="ranking-list">';
+                    let html = '';
                     let rank = 1;
+                    const medals = ['🥇','🥈','🥉'];
                     snapshot.forEach((doc) => {
                         const user = doc.data();
+                        const pts = (typeof user.points === 'number') ? user.points : 0;
+                        const isMe = currentUser && doc.id === currentUser.uid;
+                        const medal = rank <= 3 ? medals[rank-1] : `#${rank}`;
+                        const bgColor = isMe ? '#EDE7FF' : (rank === 1 ? '#FFF8E1' : 'transparent');
+                        const border = rank === 1 ? 'border:2px solid #FFD700;' : isMe ? 'border:2px solid #667eea;' : '';
                         html += `
-                            <div class="ranking-item">
-                                <div class="ranking-number">#${rank}</div>
-                                <img class="ranking-avatar" src="${user.photo || 'https://via.placeholder.com/32'}" alt="${user.name}">
-                                <div class="ranking-name">${escapeHtml(user.name)}</div>
-                                <div class="ranking-points">${user.points || 0} pts</div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:${bgColor};${border}cursor:pointer;" onclick="showFullRanking()">
+                                <span style="font-size:${rank<=3?'22px':'14px'};min-width:32px;text-align:center;font-weight:900;">${medal}</span>
+                                <img src="${user.photo || 'https://via.placeholder.com/32'}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                                <span style="flex:1;font-weight:${isMe?'900':'600'};font-size:14px;color:${isMe?'#5C4B99':'#333'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.name || '?')}${isMe?' (나)':''}</span>
+                                <span style="font-weight:900;font-size:14px;color:${rank===1?'#E65100':'#667eea'};">${pts}P</span>
                             </div>
                         `;
                         rank++;
                     });
-                    html += '</div>';
+                    if (!html) html = '<div style="text-align:center;padding:16px;color:#999;">아직 랭킹이 없습니다</div>';
                     document.getElementById('rankingContainer').innerHTML = html;
                 }, (error) => {
                     console.error('Error loading ranking:', error);
-                    document.getElementById('rankingContainer').innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">순위를 불러올 수 없습니다.</div>';
+                    document.getElementById('rankingContainer').innerHTML = '<div style="text-align:center;padding:16px;color:#999;">순위를 불러올 수 없습니다.</div>';
                 });
+        }
+
+        // Show full ranking modal
+        function showFullRanking() {
+            document.getElementById('rankingModal').classList.add('active');
+            db.collection('users').orderBy('points', 'desc').limit(50).get().then((snapshot) => {
+                let html = '';
+                let rank = 1;
+                const medals = ['🥇','🥈','🥉'];
+                snapshot.forEach((doc) => {
+                    const user = doc.data();
+                    const pts = (typeof user.points === 'number') ? user.points : 0;
+                    const isMe = currentUser && doc.id === currentUser.uid;
+                    const medal = rank <= 3 ? medals[rank-1] : `${rank}`;
+                    const bgColor = isMe ? '#EDE7FF' : (rank <= 3 ? '#FFFDE7' : (rank % 2 === 0 ? '#FAFAFA' : 'white'));
+                    html += `
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;margin-bottom:4px;background:${bgColor};${isMe?'border:2px solid #667eea;':''}">
+                            <span style="font-size:${rank<=3?'20px':'13px'};min-width:36px;text-align:center;font-weight:900;color:${rank<=3?'inherit':'#888'};">${medal}</span>
+                            <img src="${user.photo || 'https://via.placeholder.com/32'}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                            <div style="flex:1;overflow:hidden;">
+                                <div style="font-weight:${isMe?'900':'600'};font-size:14px;color:${isMe?'#5C4B99':'#333'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.name || '?')}${isMe?' 👈 나':''}</div>
+                                <div style="font-size:11px;color:#999;">게임 ${user.gamesPlayed||0}회 · 승 ${user.wins||0}회</div>
+                            </div>
+                            <span style="font-weight:900;font-size:16px;color:${rank===1?'#E65100':rank<=3?'#F57C00':'#667eea'};">${pts}P</span>
+                        </div>
+                    `;
+                    rank++;
+                });
+                if (!html) html = '<div style="text-align:center;padding:20px;color:#999;">랭킹 데이터가 없습니다</div>';
+                document.getElementById('fullRankingList').innerHTML = html;
+            }).catch((error) => {
+                document.getElementById('fullRankingList').innerHTML = '<div style="text-align:center;padding:20px;color:#999;">랭킹을 불러올 수 없습니다</div>';
+            });
+        }
+
+        function closeFullRanking() {
+            document.getElementById('rankingModal').classList.remove('active');
         }
 
         // Initialize
