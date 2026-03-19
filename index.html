@@ -1972,6 +1972,12 @@
         function showRoomScreen() {
             homeScreen.style.display = 'none';
             roomScreen.style.display = 'flex';
+            // Reset all sub-screens
+            roomSetup.classList.remove('active');
+            roomWaiting.classList.remove('active');
+            countdown.classList.remove('active');
+            gameScreen.classList.remove('active');
+            gameEnd.classList.remove('active');
         }
 
         // Skip to room waiting
@@ -2015,7 +2021,12 @@
 
         // Show room waiting screen
         function showRoomWaiting() {
+            // Hide ALL sub-screens first
             roomSetup.classList.remove('active');
+            countdown.classList.remove('active');
+            gameScreen.classList.remove('active');
+            gameEnd.classList.remove('active');
+            // Then show waiting
             roomWaiting.classList.add('active');
 
             // Update room info
