@@ -1909,9 +1909,14 @@
                     <div style="font-size:13px;opacity:0.7;margin-top:4px;">${modeIcon} ${modeName} · ${(roomData.operations||[]).join(' ')}</div>
                 </div>
                 <div style="margin-bottom:12px;">
-                    <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#333;">⚔️ 대전하기</div>
-                    <button onclick="enterStudentGame('${classCode}','speed')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">⚡ 스피드 대전 (50초)</button>
-                    <button onclick="enterStudentGame('${classCode}','survival')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#37B24D,#2F9E44);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">🛡️ 서바이벌 대전 (생명 10개)</button>
+                    <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#333;">🏠 개설된 대전방</div>
+                    <div id="openBattleRooms" style="margin-bottom:12px;">
+                        <div style="text-align:center;padding:10px;color:#999;font-size:13px;">로딩 중...</div>
+                    </div>
+
+                    <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#333;">⚔️ 대전방 만들기</div>
+                    <button onclick="enterStudentGame('${classCode}','speed')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">⚡ 스피드 대전</button>
+                    <button onclick="enterStudentGame('${classCode}','survival')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#37B24D,#2F9E44);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">🛡️ 서바이벌 대전</button>
                     <button onclick="enterStudentGame('${classCode}','boss')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#E8590C,#D9480F);color:white;font-size:15px;font-weight:700;cursor:pointer;">🐉 보스 대전</button>
                 </div>
                 <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#5C4B99;">🏆 실시간 반 랭킹</div>
@@ -1919,6 +1924,9 @@
                     <div style="text-align:center;padding:12px;color:#999;">로딩 중...</div>
                 </div>
             `;
+
+            // Start real-time battle rooms listener
+            loadOpenBattleRooms(classCode, studentName);
 
             // Start real-time ranking listener
             if (classRankingUnsubscribe) classRankingUnsubscribe();
@@ -1974,6 +1982,87 @@
                     });
                 }
             } catch(e) { console.error('Score save error:', e); }
+        }
+
+        // Load open battle rooms for student dashboard
+        let battleRoomsUnsubscribe = null;
+        function loadOpenBattleRooms(classCode, studentName) {
+            if (battleRoomsUnsubscribe) battleRoomsUnsubscribe();
+            battleRoomsUnsubscribe = db.collection('rooms')
+                .where('status', '==', 'waiting')
+                .where('playerCount', '==', 1)
+                .onSnapshot((snapshot) => {
+                    const container = document.getElementById('openBattleRooms');
+                    if (!container) return;
+                    const rooms = [];
+                    snapshot.forEach(doc => {
+                        const r = doc.data();
+                        // Only show non-class rooms (battle rooms)
+                        if (!r.isClassRoom && r.hostUid !== (currentUser ? currentUser.uid : gameState.guestUid)) {
+                            rooms.push({ id: doc.id, ...r });
+                        }
+                    });
+                    if (rooms.length === 0) {
+                        container.innerHTML = '<div style="text-align:center;padding:12px;color:#999;font-size:13px;background:#f8f6ff;border-radius:10px;">대기 중인 대전방이 없습니다</div>';
+                        return;
+                    }
+                    let html = '';
+                    rooms.forEach(r => {
+                        const modeIcon = {speed:'⚡',survival:'🛡️',boss:'🐉'}[r.gameMode]||'🎮';
+                        const modeName = {speed:'스피드',survival:'서바이벌',boss:'보스'}[r.gameMode]||'';
+                        html += `<div style="background:white;border:2px solid #e0d8f0;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-weight:800;font-size:14px;color:#333;">${modeIcon} ${modeName} 대전</div>
+                                <div style="font-size:12px;color:#888;">'${escapeHtml(r.hostName||'?')}'의 방에서 대기중</div>
+                            </div>
+                            <button onclick="joinBattleRoom('${r.id}')" style="padding:8px 16px;background:#667eea;color:white;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">입장</button>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }, (error) => {
+                    console.error('Battle rooms error:', error);
+                    const container = document.getElementById('openBattleRooms');
+                    if (container) container.innerHTML = '<div style="text-align:center;padding:10px;color:#999;font-size:13px;">대전방 목록을 불러올 수 없습니다</div>';
+                });
+        }
+
+        // Join an existing battle room
+        async function joinBattleRoom(roomId) {
+            try {
+                const roomDoc = await db.collection('rooms').doc(roomId).get();
+                if (!roomDoc.exists) { alert('방이 사라졌습니다.'); return; }
+                const room = roomDoc.data();
+                if (room.playerCount >= 2) { alert('이미 대전이 시작되었습니다.'); return; }
+
+                gameState.mode = room.gameMode || 'survival';
+                selectedOperations = room.operations || ['+','-'];
+                gameState.isHost = false;
+                gameState.selectedChar = gameState.guestChar || selectedProfileChar || characters[Math.floor(Math.random() * characters.length)];
+                currentRoom = roomId;
+
+                const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
+                const myUid = currentUser ? currentUser.uid : (gameState.guestUid || 'guest_' + Date.now());
+
+                await db.collection('rooms').doc(roomId).update({
+                    playerCount: 2,
+                    guestUid: myUid,
+                    guestName: myName,
+                    guestChar: gameState.selectedChar,
+                    guestPeerId: peerConnection ? peerConnection.id : ''
+                });
+
+                if (room.hostPeerId && peerConnection) {
+                    dataConnection = peerConnection.connect(room.hostPeerId);
+                    setupDataConnection();
+                }
+
+                homeScreen.classList.remove('active');
+                roomScreen.classList.add('active');
+                setupRoomListener(db.collection('rooms').doc(roomId));
+                showRoomWaiting();
+            } catch(e) {
+                alert('입장 실패: ' + e.message);
+            }
         }
 
         // Show Home
