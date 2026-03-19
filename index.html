@@ -2491,9 +2491,15 @@
 
         // Join Room
         async function joinRoom(roomId, roomData) {
+            // Auto-assign character if not selected
             if (!gameState.selectedChar) {
-                alert('캐릭터를 선택하세요');
-                return;
+                gameState.selectedChar = gameState.guestChar || selectedProfileChar || characters[Math.floor(Math.random() * characters.length)];
+            }
+
+            // Ensure PeerJS
+            if (!peerConnection || peerConnection.destroyed) {
+                initializePeer();
+                await new Promise(r => setTimeout(r, 1000));
             }
 
             currentRoom = roomId;
@@ -2503,36 +2509,59 @@
             gameState.hostPhoto = roomData.hostPhoto;
             gameState.hostChar = roomData.hostChar;
             gameState.mode = roomData.gameMode || 'speed';
-            selectedOperations = roomData.operations || ['-'];
+            selectedOperations = roomData.operations || ['+','-'];
             gameState.isHost = false;
+
+            const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
+            const myUid = currentUser ? currentUser.uid : (gameState.guestUid || 'guest_' + Date.now());
 
             try {
                 await db.collection('rooms').doc(roomId).update({
-                    guestUid: currentUser ? currentUser.uid : gameState.guestUid,
-                    guestName: currentUser ? (currentUser.displayName || 'Guest') : gameState.guestName,
+                    guestUid: myUid,
+                    guestName: myName,
                     guestPhoto: currentUser ? (currentUser.photoURL || '') : '',
                     guestChar: gameState.selectedChar,
+                    guestPeerId: peerConnection ? peerConnection.id : '',
                     playerCount: 2,
                     status: 'waiting'
                 });
 
+                // Connect PeerJS
+                if (roomData.hostPeerId && peerConnection) {
+                    dataConnection = peerConnection.connect(roomData.hostPeerId);
+                    setupDataConnection();
+                }
+
                 showRoomWaiting();
                 setupRoomListener();
             } catch (error) {
+                console.error('Join room error:', error);
                 alert('방 입장 실패: ' + error.message);
             }
         }
 
         // Show Room Waiting
         function showRoomWaiting() {
+            // Ensure correct screens
+            homeScreen.classList.remove('active');
+            roomScreen.classList.add('active');
             roomSetup.classList.remove('active');
+            countdown.classList.remove('active');
+            gameScreen.classList.remove('active');
+            gameEnd.classList.remove('active');
             roomWaiting.classList.add('active');
+
             document.getElementById('player1Char').textContent = gameState.hostChar || '🧙';
             document.getElementById('player1Name').textContent = gameState.hostName || 'Player 1';
             document.getElementById('player2Char').textContent = gameState.selectedChar || '🧙';
-            document.getElementById('player2Name').textContent = currentUser ? (currentUser.displayName || 'You') : gameState.guestName;
-            document.getElementById('roomCodeText').textContent = gameState.roomCode || '000000';
-            readyBtn.textContent = gameState.isHost ? '시작 준비!' : '준비 완료!';
+            document.getElementById('player2Name').textContent = currentUser ? (currentUser.displayName || 'You') : (gameState.guestName || 'Player 2');
+            // Hide room code display (not needed)
+            const rcText = document.getElementById('roomCodeText');
+            if (rcText) rcText.style.display = 'none';
+            readyBtn.textContent = '준비 완료!';
+            readyBtn.disabled = false;
+            readyBtn.style.display = 'block';
+            gameState.isReady = false;
         }
 
         // Setup Room Listener (accepts optional roomRef, falls back to currentRoom)
