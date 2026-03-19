@@ -1483,8 +1483,9 @@
             document.getElementById('userName').textContent = user.displayName || '사용자';
             document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/40';
 
-            // Initialize PeerJS
-            peer = new Peer('mb-' + user.uid.substring(0,16) + '-' + Math.random().toString(36).substring(2,6), {
+            // Initialize PeerJS with predictable ID based on uid
+            const myPeerId = 'mb-' + user.uid.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+            peer = new Peer(myPeerId, {
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -1493,8 +1494,20 @@
                 }
             });
 
+            peer.on('open', (id) => {
+                console.log('My PeerJS ID:', id);
+            });
+
             peer.on('error', (err) => {
-                console.log('Peer error:', err);
+                console.log('Peer error:', err.type, err);
+                // If ID taken, try with random suffix
+                if (err.type === 'unavailable-id') {
+                    const altId = myPeerId + Math.random().toString(36).substring(2,5);
+                    peer = new Peer(altId, {
+                        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+                    });
+                    peer.on('connection', (conn) => { dataConnection = conn; setupDataConnection(); });
+                }
             });
 
             peer.on('connection', (conn) => {
@@ -1713,8 +1726,10 @@
                 gameState.hostName = room.hostName;
                 gameState.hostUid = room.hostUid;
                 gameState.hostPhoto = room.hostPhoto;
+                gameState.hostChar = room.hostChar;
                 gameState.isHost = false;
-                gameState.opponentReady = true;
+                gameState.isReady = false;
+                gameState.opponentReady = false;
                 currentRoom = roomId;
 
                 passwordModal.classList.remove('active');
@@ -1804,11 +1819,15 @@
                     hostName: currentUser.displayName,
                     hostUid: currentUser.uid,
                     hostPhoto: currentUser.photoURL,
+                    hostPeerId: peer.id,
+                    hostChar: gameState.selectedChar,
                     ops: 0,
                     hasPassword: hasPassword,
                     password: password,
                     status: 'waiting',
                     playerCount: 1,
+                    hostReady: false,
+                    guestReady: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -1818,7 +1837,10 @@
                 gameState.hostUid = currentUser.uid;
                 gameState.hostPhoto = currentUser.photoURL;
                 gameState.hostChar = gameState.selectedChar;
-                gameState.isReady = true;
+                gameState.isReady = false;
+
+                // Listen for room changes (detect guest joining)
+                setupRoomListener(roomRef);
 
                 roomSetup.classList.remove('active');
                 showRoomWaiting();
@@ -1831,6 +1853,50 @@
         // Generate room code
         function generateRoomCode() {
             return Math.random().toString(36).substring(2, 6).toUpperCase();
+        }
+
+        // Room listener unsubscribe function
+        let roomUnsubscribe = null;
+
+        // Setup real-time listener for room changes
+        function setupRoomListener(roomRef) {
+            // Cleanup previous listener
+            if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
+
+            roomUnsubscribe = roomRef.onSnapshot((doc) => {
+                if (!doc.exists) {
+                    // Room was deleted
+                    console.log('Room deleted');
+                    if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
+                    return;
+                }
+                const data = doc.data();
+
+                // Host detects guest joined
+                if (gameState.isHost && data.guestUid && !gameState.guestUid) {
+                    gameState.guestUid = data.guestUid;
+                    gameState.guestName = data.guestName;
+                    gameState.guestPhoto = data.guestPhoto;
+                    gameState.guestChar = data.guestChar;
+                    // Connect to guest's PeerJS
+                    if (data.guestPeerId) {
+                        connectToPeer(data.guestPeerId);
+                    }
+                    showRoomWaiting();
+                }
+
+                // Guest detects guest info cleared (was kicked or host left)
+                if (!gameState.isHost && !data.guestUid && gameState.guestUid === currentUser.uid) {
+                    // Guest was removed
+                }
+
+                // Detect room deletion (all left)
+                if (data.playerCount === 0 || (!data.hostUid && !data.guestUid)) {
+                    roomRef.delete().catch(() => {});
+                }
+            }, (error) => {
+                console.error('Room listener error:', error);
+            });
         }
 
         // Show room screen
@@ -1852,19 +1918,23 @@
                 gameState.guestUid = currentUser.uid;
                 gameState.guestPhoto = currentUser.photoURL;
 
-                // Update room with guest info
+                // Update room with guest info + PeerJS ID
                 const roomRef = db.collection('rooms').doc(currentRoom);
                 await roomRef.update({
-                    playerCount: firebase.firestore.FieldValue.increment(1),
+                    playerCount: 2,
                     guestName: gameState.guestName,
                     guestUid: gameState.guestUid,
                     guestPhoto: gameState.guestPhoto,
-                    guestChar: gameState.guestChar
+                    guestChar: gameState.guestChar,
+                    guestPeerId: peer.id
                 });
 
-                // Setup connection with host
-                if (room.hostUid) {
-                    connectToPeer(room.hostUid);
+                // Setup real-time listener for guest too
+                setupRoomListener(roomRef);
+
+                // Connect to host's PeerJS using hostPeerId from Firestore
+                if (room.hostPeerId) {
+                    connectToPeer(room.hostPeerId);
                 }
 
                 showRoomWaiting();
@@ -2394,8 +2464,19 @@
             gameScreen.classList.remove('active');
             gameEnd.classList.remove('active');
 
+            // Cleanup room listener
+            if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
+
             // Clear room reference
             currentRoom = null;
+
+            // Reset game state
+            gameState.isHost = false;
+            gameState.isReady = false;
+            gameState.opponentReady = false;
+            gameState.guestUid = null;
+            gameState.guestName = null;
+            gameState.guestPhoto = null;
 
             // Reload public rooms
             loadPublicRooms();
@@ -2423,10 +2504,14 @@
                             hostName: roomData.guestName || '사용자',
                             hostPhoto: roomData.guestPhoto || '',
                             hostChar: roomData.guestChar || '',
+                            hostPeerId: roomData.guestPeerId || '',
+                            hostReady: false,
+                            guestReady: false,
                             guestUid: firebase.firestore.FieldValue.delete(),
                             guestName: firebase.firestore.FieldValue.delete(),
                             guestPhoto: firebase.firestore.FieldValue.delete(),
                             guestChar: firebase.firestore.FieldValue.delete(),
+                            guestPeerId: firebase.firestore.FieldValue.delete(),
                             playerCount: 1,
                             status: 'waiting'
                         });
@@ -2439,10 +2524,12 @@
                     await roomRef.update({
                         playerCount: 1,
                         status: 'waiting',
+                        guestReady: false,
                         guestUid: firebase.firestore.FieldValue.delete(),
                         guestName: firebase.firestore.FieldValue.delete(),
                         guestPhoto: firebase.firestore.FieldValue.delete(),
-                        guestChar: firebase.firestore.FieldValue.delete()
+                        guestChar: firebase.firestore.FieldValue.delete(),
+                        guestPeerId: firebase.firestore.FieldValue.delete()
                     });
                     sendPeerMessage({ type: 'GUEST_LEFT' });
                 }
