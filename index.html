@@ -1546,6 +1546,33 @@
         // Initialize on load
         window.addEventListener('load', () => {
             initializePeer();
+
+            // Check for guest session in sessionStorage
+            const guestSession = sessionStorage.getItem('guestSession');
+            if (guestSession) {
+                try {
+                    const gs = JSON.parse(guestSession);
+                    gameState.guestName = gs.name;
+                    gameState.guestUid = gs.uid;
+                    gameState.guestChar = gs.char;
+                    currentRoom = gs.classCode;
+                    selectedOperations = gs.operations || ['+','-'];
+                    // Restore guest view
+                    loadingScreen.style.display = 'none';
+                    loginScreen.style.display = 'none';
+                    homeScreen.classList.add('active');
+                    document.getElementById('userName').textContent = gs.name;
+                    document.getElementById('gameModeButtons').style.display = 'none';
+                    // Reload class data
+                    db.collection('rooms').doc(gs.classCode).get().then(doc => {
+                        if (doc.exists) {
+                            showStudentClassView(gs.classCode, gs.name, doc.data());
+                        }
+                    });
+                    return; // Skip auth check for guest
+                } catch(e) { sessionStorage.removeItem('guestSession'); }
+            }
+
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUser = user;
@@ -1648,6 +1675,15 @@
                 // 닉네임과 캐릭터를 헤더에 표시
                 document.getElementById('userName').textContent = studentName;
                 document.getElementById('userAvatar').outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${gameState.guestChar}</div>`;
+
+                // Save guest session for refresh persistence
+                sessionStorage.setItem('guestSession', JSON.stringify({
+                    name: studentName,
+                    uid: gameState.guestUid,
+                    char: gameState.guestChar,
+                    classCode: classCode,
+                    operations: roomData.operations || ['+','-']
+                }));
 
                 // Show student dashboard with class ranking
                 showStudentClassView(classCode, studentName, roomData);
@@ -2029,6 +2065,12 @@
         // Join an existing battle room
         async function joinBattleRoom(roomId) {
             try {
+                // Ensure PeerJS is initialized
+                if (!peerConnection || peerConnection.destroyed) {
+                    initializePeer();
+                    await new Promise(r => setTimeout(r, 1000)); // Wait for peer to initialize
+                }
+
                 const roomDoc = await db.collection('rooms').doc(roomId).get();
                 if (!roomDoc.exists) { alert('방이 사라졌습니다.'); return; }
                 const room = roomDoc.data();
@@ -2039,6 +2081,8 @@
                 gameState.isHost = false;
                 gameState.selectedChar = gameState.guestChar || selectedProfileChar || characters[Math.floor(Math.random() * characters.length)];
                 currentRoom = roomId;
+                gameState.hostName = room.hostName;
+                gameState.hostChar = room.hostChar;
 
                 const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
                 const myUid = currentUser ? currentUser.uid : (gameState.guestUid || 'guest_' + Date.now());
@@ -2051,6 +2095,7 @@
                     guestPeerId: peerConnection ? peerConnection.id : ''
                 });
 
+                // Connect PeerJS
                 if (room.hostPeerId && peerConnection) {
                     dataConnection = peerConnection.connect(room.hostPeerId);
                     setupDataConnection();
@@ -2058,6 +2103,7 @@
 
                 homeScreen.classList.remove('active');
                 roomScreen.classList.add('active');
+                roomSetup.classList.remove('active');
                 setupRoomListener(db.collection('rooms').doc(roomId));
                 showRoomWaiting();
             } catch(e) {
@@ -2272,6 +2318,12 @@
 
         // Enter Room Setup - auto create room and wait for match
         async function enterRoomSetup() {
+            // Ensure PeerJS is initialized
+            if (!peerConnection || peerConnection.destroyed) {
+                initializePeer();
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
             homeScreen.classList.remove('active');
             roomScreen.classList.add('active');
             roomSetup.classList.add('active');
@@ -2483,9 +2535,11 @@
             readyBtn.textContent = gameState.isHost ? '시작 준비!' : '준비 완료!';
         }
 
-        // Setup Room Listener
-        function setupRoomListener() {
-            roomUnsubscribe = db.collection('rooms').doc(currentRoom).onSnapshot((doc) => {
+        // Setup Room Listener (accepts optional roomRef, falls back to currentRoom)
+        function setupRoomListener(roomRef) {
+            if (roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
+            const ref = roomRef || db.collection('rooms').doc(currentRoom);
+            roomUnsubscribe = ref.onSnapshot((doc) => {
                 if (!doc.exists) {
                     alert('방이 삭제되었습니다');
                     goHome();
