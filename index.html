@@ -1504,12 +1504,32 @@
 
             // Ensure user document exists
             const userRef = db.collection('users').doc(user.uid);
-            await userRef.set({
-                name: user.displayName,
-                photo: user.photoURL,
-                email: user.email,
-                points: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            const userDoc = await userRef.get();
+            if (!userDoc.exists) {
+                await userRef.set({
+                    name: user.displayName,
+                    photo: user.photoURL,
+                    email: user.email,
+                    points: 0,
+                    gamesPlayed: 0,
+                    wins: 0,
+                    isAdmin: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                const existingData = userDoc.data();
+                const updateData = {
+                    name: user.displayName,
+                    photo: user.photoURL,
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                // Fix corrupted points (if stored as Timestamp instead of number)
+                if (existingData.points && typeof existingData.points !== 'number') {
+                    updateData.points = 0;
+                }
+                await userRef.update(updateData);
+            }
 
             loadUserStats();
             loadPublicRooms();
@@ -1523,7 +1543,8 @@
                 const doc = await userRef.get();
                 if (doc.exists) {
                     const data = doc.data();
-                    document.getElementById('userPoints').textContent = data.points || 0;
+                    const pts = (typeof data.points === 'number') ? data.points : 0;
+                    document.getElementById('userPoints').textContent = pts;
                     document.getElementById('userGames').textContent = data.gamesPlayed || 0;
                     document.getElementById('userWins').textContent = data.wins || 0;
                 }
