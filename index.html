@@ -2617,16 +2617,51 @@
                 }
 
                 const roomData = doc.data();
-                if (roomData.status === 'finished' || roomData.status === 'playing') {
-                    if (roomData.status === 'playing') {
-                        startCountdown();
+
+                // HOST: detect guest joined → switch from matching to waiting room
+                if (gameState.isHost && roomData.guestUid && roomData.playerCount >= 2) {
+                    gameState.guestName = roomData.guestName;
+                    gameState.guestChar = roomData.guestChar;
+                    gameState.hostName = roomData.hostName;
+                    gameState.hostChar = roomData.hostChar || gameState.selectedChar;
+
+                    // Update waiting room display
+                    document.getElementById('player1Char').textContent = gameState.hostChar || '⚔️';
+                    document.getElementById('player1Name').textContent = gameState.hostName || 'Host';
+                    document.getElementById('player1Status').textContent = gameState.isReady ? '준비됨' : '대기중';
+                    document.getElementById('player2Char').textContent = roomData.guestChar || '🧙';
+                    document.getElementById('player2Name').textContent = roomData.guestName || 'Guest';
+                    document.getElementById('player2Status').textContent = roomData.guestReady ? '준비됨' : '대기중';
+
+                    // Connect PeerJS to guest if not connected
+                    if (roomData.guestPeerId && peerConnection && !dataConnection) {
+                        dataConnection = peerConnection.connect(roomData.guestPeerId);
+                        setupDataConnection();
+                    }
+
+                    // Switch to waiting room if still on matching screen
+                    if (roomSetup.classList.contains('active')) {
+                        showRoomWaiting();
                     }
                 }
 
-                // Update player status
+                // GUEST: update host ready status
                 if (!gameState.isHost) {
-                    gameState.hostReady = roomData.hostReady;
-                    document.getElementById('player1Status').textContent = gameState.hostReady ? '준비됨' : '대기중';
+                    document.getElementById('player1Status').textContent = roomData.hostReady ? '준비됨' : '대기중';
+                }
+
+                // Both ready → start game
+                if (roomData.status === 'playing') {
+                    startCountdown();
+                }
+
+                // Update guest ready status for host
+                if (gameState.isHost && roomData.guestReady) {
+                    document.getElementById('player2Status').textContent = '준비됨';
+                    // If host also ready, start
+                    if (gameState.isReady && roomData.guestReady) {
+                        db.collection('rooms').doc(currentRoom).update({ status: 'playing' }).catch(() => {});
+                    }
                 }
             });
         }
