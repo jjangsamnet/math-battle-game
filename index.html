@@ -1417,13 +1417,16 @@
 
         <!-- Profile Modal -->
         <div id="profileModal" class="modal">
-            <div class="modal-content">
+            <div class="modal-content" style="max-height:85vh;overflow-y:auto;">
                 <div class="modal-title">프로필 수정</div>
                 <div class="profile-form">
-                    <input type="text" id="profileNameInput" placeholder="이름">
-                    <input type="email" id="profileEmailInput" placeholder="이메일" disabled>
+                    <label style="font-size:13px;font-weight:700;color:#555;margin-bottom:4px;display:block;">닉네임</label>
+                    <input type="text" id="profileNameInput" placeholder="닉네임 입력" maxlength="12">
+                    <label style="font-size:13px;font-weight:700;color:#555;margin:12px 0 4px;display:block;">캐릭터 선택</label>
+                    <div id="profileCharGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:12px;max-height:150px;overflow-y:auto;padding:4px;background:#f8f6ff;border-radius:10px;"></div>
+                    <input type="email" id="profileEmailInput" placeholder="이메일" disabled style="opacity:0.6;">
                 </div>
-                <div class="modal-buttons" style="margin-top: 20px;">
+                <div class="modal-buttons" style="margin-top: 16px;">
                     <button class="modal-btn modal-btn-confirm" id="profileSaveBtn">저장</button>
                     <button class="modal-btn modal-btn-cancel" id="profileCloseBtn">닫기</button>
                 </div>
@@ -1657,6 +1660,11 @@
                 loginScreen.style.display = 'none';
                 guestLoginScreen.classList.remove('active');
                 homeScreen.classList.add('active');
+                document.getElementById('gameModeButtons').style.display = 'none'; // 학생은 반 내에서 게임
+
+                // 닉네임과 캐릭터를 헤더에 표시
+                document.getElementById('userName').textContent = studentName;
+                document.getElementById('userAvatar').outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${gameState.guestChar}</div>`;
 
                 // Show student dashboard with class ranking
                 showStudentClassView(classCode, studentName, roomData);
@@ -1911,14 +1919,20 @@
             }
 
             const modeIcon = {speed:'⚡',survival:'🛡️',boss:'🐉'}[roomData.gameMode]||'🎮';
+            const modeName = {speed:'스피드',survival:'서바이벌',boss:'보스대전'}[roomData.gameMode]||'';
             viewDiv.innerHTML = `
-                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:16px;padding:16px;margin-bottom:12px;">
-                    <div style="font-size:18px;font-weight:900;">${escapeHtml(roomData.className||'')}</div>
-                    <div style="font-size:13px;opacity:0.8;">${modeIcon} ${(roomData.operations||[]).join(' ')} · 반코드: ${classCode}</div>
-                    <div style="font-size:14px;margin-top:6px;">👤 ${escapeHtml(studentName)}</div>
+                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center;">
+                    <div style="font-size:20px;font-weight:900;">${escapeHtml(roomData.className||'')}</div>
+                    <div style="font-size:13px;opacity:0.7;margin-top:4px;">${modeIcon} ${modeName} · ${(roomData.operations||[]).join(' ')}</div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#333;">⚔️ 대전하기</div>
+                    <button onclick="enterStudentGame('${classCode}','speed')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">⚡ 스피드 대전 (50초)</button>
+                    <button onclick="enterStudentGame('${classCode}','survival')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#37B24D,#2F9E44);color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">🛡️ 서바이벌 대전 (생명 10개)</button>
+                    <button onclick="enterStudentGame('${classCode}','boss')" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#E8590C,#D9480F);color:white;font-size:15px;font-weight:700;cursor:pointer;">🐉 보스 대전</button>
                 </div>
                 <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#5C4B99;">🏆 실시간 반 랭킹</div>
-                <div id="classRankingContainer" style="background:#f8f6ff;border:2px solid #e0d8f0;border-radius:12px;padding:10px;margin-bottom:16px;max-height:250px;overflow-y:auto;">
+                <div id="classRankingContainer" style="background:#f8f6ff;border:2px solid #e0d8f0;border-radius:12px;padding:10px;margin-bottom:16px;max-height:300px;overflow-y:auto;">
                     <div style="text-align:center;padding:12px;color:#999;">로딩 중...</div>
                 </div>
             `;
@@ -2012,13 +2026,37 @@
             }
         }
 
-        // Profile Modal
+        // Profile Modal with character selection
+        let selectedProfileChar = '';
         function showProfileModal() {
             profileModal.classList.add('active');
+            // Load current data
             if (currentUser) {
-                document.getElementById('profileNameInput').value = currentUser.displayName || '';
-                document.getElementById('profileEmailInput').value = currentUser.email || '';
+                db.collection('users').doc(currentUser.uid).get().then(doc => {
+                    const data = doc.exists ? doc.data() : {};
+                    document.getElementById('profileNameInput').value = data.name || currentUser.displayName || '';
+                    document.getElementById('profileEmailInput').value = currentUser.email || '';
+                    selectedProfileChar = data.profileChar || '';
+                    renderProfileCharGrid();
+                });
+            } else if (gameState && gameState.guestName) {
+                document.getElementById('profileNameInput').value = gameState.guestName || '';
+                document.getElementById('profileEmailInput').value = '게스트 접속';
+                selectedProfileChar = gameState.guestChar || '';
+                renderProfileCharGrid();
             }
+        }
+
+        function renderProfileCharGrid() {
+            const grid = document.getElementById('profileCharGrid');
+            grid.innerHTML = characters.map(c =>
+                `<div onclick="selectProfileChar('${c}')" style="font-size:24px;text-align:center;padding:6px;cursor:pointer;border-radius:8px;border:2px solid ${c===selectedProfileChar?'#667eea':'transparent'};background:${c===selectedProfileChar?'#EDE7FF':'white'};transition:all 0.15s;">${c}</div>`
+            ).join('');
+        }
+
+        function selectProfileChar(c) {
+            selectedProfileChar = c;
+            renderProfileCharGrid();
         }
 
         profileCloseBtn.addEventListener('click', () => {
@@ -2027,18 +2065,33 @@
 
         profileSaveBtn.addEventListener('click', async () => {
             const newName = document.getElementById('profileNameInput').value.trim();
-            if (!newName) {
-                alert('이름을 입력하세요');
-                return;
-            }
+            if (!newName) { alert('닉네임을 입력하세요'); return; }
             try {
-                await currentUser.updateProfile({ displayName: newName });
-                await db.collection('users').doc(currentUser.uid).update({ name: newName });
+                if (currentUser && currentUser.uid) {
+                    await db.collection('users').doc(currentUser.uid).update({
+                        name: newName,
+                        profileChar: selectedProfileChar
+                    });
+                    currentUser.displayName = newName;
+                }
+                // Update guest state too
+                if (gameState.guestName) gameState.guestName = newName;
+                if (selectedProfileChar) {
+                    gameState.guestChar = selectedProfileChar;
+                    document.getElementById('userAvatar').src = '';
+                    document.getElementById('userAvatar').alt = selectedProfileChar;
+                    document.getElementById('userAvatar').style.fontSize = '28px';
+                    document.getElementById('userAvatar').style.display = 'flex';
+                    document.getElementById('userAvatar').style.alignItems = 'center';
+                    document.getElementById('userAvatar').style.justifyContent = 'center';
+                    // Use emoji as avatar
+                    document.getElementById('userAvatar').outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${selectedProfileChar}</div>`;
+                }
                 document.getElementById('userName').textContent = newName;
                 profileModal.classList.remove('active');
-                alert('프로필이 업데이트되었습니다');
+                alert('프로필이 저장되었습니다!');
             } catch (error) {
-                alert('업데이트 실패: ' + error.message);
+                alert('저장 실패: ' + error.message);
             }
         });
 
@@ -2128,6 +2181,22 @@
             selectedOperations = ['-'];
             enterRoomSetup();
         });
+
+        // Student enters game from class view
+        function enterStudentGame(classCode, mode) {
+            gameState.mode = mode;
+            currentRoom = classCode;
+            // Get class operations
+            db.collection('rooms').doc(classCode).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    selectedOperations = data.operations || ['+','-'];
+                }
+                enterRoomSetup();
+            }).catch(() => {
+                enterRoomSetup();
+            });
+        }
 
         // Enter Room Setup
         function enterRoomSetup() {
