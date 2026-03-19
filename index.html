@@ -767,6 +767,9 @@
             align-items: center;
             gap: 20px;
             padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             background: #f5f5f5;
             border-radius: 12px;
             text-align: center;
@@ -779,7 +782,7 @@
         }
 
         .answer-input {
-            width: 100%;
+            flex: 1;
             max-width: 200px;
             padding: 15px;
             font-size: 18px;
@@ -808,6 +811,31 @@
 
         .surrender-btn:hover {
             background: #f57c00;
+        }
+
+        /* Answer Submit Button */
+        .answer-submit-btn {
+            padding: 12px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 48px;
+            font-size: 16px;
+            flex: 1;
+            margin-left: 10px;
+        }
+
+        .answer-submit-btn:hover {
+            background: #45a049;
+        }
+
+        .answer-submit-btn:active {
+            transform: scale(0.98);
         }
 
         /* Game End Screen */
@@ -1363,6 +1391,7 @@
             <div class="question-area">
                 <div class="question-text" id="questionText">7 - 3</div>
                 <input type="number" class="answer-input" id="answerInput" placeholder="답을 입력하세요">
+                <button class="answer-submit-btn" id="answerSubmitBtn">제출</button>
                 <button class="surrender-btn" id="surrenderBtn">항복</button>
             </div>
         </div>
@@ -2941,14 +2970,38 @@
         // Answer Input
         answerInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const answer = answerInput.value.trim();
-                if (answer === gameState.currentQuestion.answer) {
-                    handleCorrectAnswer();
-                } else {
-                    handleIncorrectAnswer();
+                const answerValue = answerInput.value.trim();
+                if (answerValue !== '') {
+                    checkAnswer(parseInt(answerValue));
                 }
             }
         });
+
+        // Answer Submit Button
+        const answerSubmitBtn = document.getElementById('answerSubmitBtn');
+        if (answerSubmitBtn) {
+            answerSubmitBtn.addEventListener('click', () => {
+                const answerValue = answerInput.value.trim();
+                if (answerValue === '') {
+                    alert('답을 입력하세요');
+                    return;
+                }
+                checkAnswer(parseInt(answerValue));
+            });
+        }
+
+        function checkAnswer(userAnswer) {
+            if (!gameState.gameActive || !gameState.currentQuestion) return;
+            
+            const correct = String(userAnswer) === gameState.currentQuestion.answer;
+            
+            if (correct) {
+                handleCorrectAnswer();
+            } else {
+                handleIncorrectAnswer();
+            }
+        }
+
 
         // Correct Answer
         function handleCorrectAnswer() {
@@ -3194,17 +3247,8 @@
                 await saveStudentScore(currentRoom, currentUser.displayName, pointsEarned, result === 'win');
             }
 
-            // Cleanup room
-            if (gameState.isHost) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                try {
-                    await db.collection('rooms').doc(currentRoom).update({ status: 'finished' });
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                    await db.collection('rooms').doc(currentRoom).delete();
-                } catch (error) {
-                    console.log('Error deleting room:', error);
-                }
-            }
+            // Cleanup happens only when user clicks "홈으로 돌아가기" button
+            // Do NOT auto-delete the room
         }
 
         // Go Home
@@ -3321,6 +3365,17 @@
                 console.log('Audio not available');
             }
         }
+    
+        // Cleanup on page close
+        window.addEventListener('beforeunload', () => {
+            if (dataConnection) {
+                dataConnection.close();
+            }
+            if (peerConnection) {
+                peerConnection.destroy();
+            }
+        });
+
     </script>
 </body>
 </html>
