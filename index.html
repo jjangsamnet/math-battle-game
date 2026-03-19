@@ -3003,11 +3003,68 @@
         }
 
 
+        // ═══ Visual + Sound Effects ═══
+        function showCorrectEffect() {
+            // Sound: 딩동댕!
+            playSound(523, 150); setTimeout(() => playSound(659, 150), 150); setTimeout(() => playSound(784, 200), 300);
+            // Visual: 폭죽 effect
+            const fx = document.createElement('div');
+            fx.innerHTML = '🎉 정답! 🎊';
+            fx.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;color:#4CAF50;z-index:9999;pointer-events:none;animation:popFade 1s ease forwards;text-shadow:0 4px 20px rgba(76,175,80,0.5);';
+            document.body.appendChild(fx);
+            // Sparkles
+            for (let i = 0; i < 8; i++) {
+                const sp = document.createElement('div');
+                const angle = (i / 8) * Math.PI * 2;
+                const emojis = ['✨','🌟','⭐','💫','🎆','🎇','🎉','🎊'];
+                sp.textContent = emojis[i];
+                sp.style.cssText = `position:fixed;top:40%;left:50%;font-size:28px;z-index:9999;pointer-events:none;transition:all 0.8s ease;opacity:1;`;
+                document.body.appendChild(sp);
+                setTimeout(() => {
+                    sp.style.transform = `translate(${Math.cos(angle)*100}px, ${Math.sin(angle)*100}px)`;
+                    sp.style.opacity = '0';
+                }, 50);
+                setTimeout(() => sp.remove(), 900);
+            }
+            setTimeout(() => fx.remove(), 1000);
+        }
+
+        function showIncorrectEffect() {
+            // Sound: 땡!
+            playSound(200, 300); setTimeout(() => playSound(150, 300), 200);
+            // Visual: 우울 effect
+            const fx = document.createElement('div');
+            fx.innerHTML = '😢 오답! 💧';
+            fx.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;color:#F44336;z-index:9999;pointer-events:none;animation:popFade 1s ease forwards;text-shadow:0 4px 20px rgba(244,67,54,0.5);';
+            document.body.appendChild(fx);
+            // Screen shake
+            document.body.style.animation = 'shakeBody 0.4s ease';
+            setTimeout(() => { document.body.style.animation = ''; }, 400);
+            // Teardrops
+            for (let i = 0; i < 5; i++) {
+                const tear = document.createElement('div');
+                tear.textContent = '💧';
+                tear.style.cssText = `position:fixed;top:35%;left:${30 + i * 10}%;font-size:24px;z-index:9999;pointer-events:none;transition:all 1s ease;opacity:1;`;
+                document.body.appendChild(tear);
+                setTimeout(() => { tear.style.top = '80%'; tear.style.opacity = '0'; }, 50);
+                setTimeout(() => tear.remove(), 1100);
+            }
+            setTimeout(() => fx.remove(), 1000);
+        }
+
+        // Add CSS animations for effects
+        const effectStyle = document.createElement('style');
+        effectStyle.textContent = `
+            @keyframes popFade { 0%{transform:translate(-50%,-50%) scale(0.3);opacity:0} 30%{transform:translate(-50%,-50%) scale(1.2);opacity:1} 60%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(1);opacity:0} }
+            @keyframes shakeBody { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+        `;
+        document.head.appendChild(effectStyle);
+
         // Correct Answer
         function handleCorrectAnswer() {
             gameState.myScore++;
             gameState.myStreak++;
-            playSound(1200, 100);
+            showCorrectEffect();
 
             // Streak bonus: 3 consecutive → +1 life
             if (gameState.myStreak > 0 && gameState.myStreak % 3 === 0) {
@@ -3045,7 +3102,7 @@
 
         // Incorrect Answer
         function handleIncorrectAnswer() {
-            playSound(400, 100);
+            showIncorrectEffect();
             gameState.myStreak = 0;
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
@@ -3238,13 +3295,21 @@
                 }
             }
 
-            // Save score to class ranking (for guest/student users)
-            if (currentRoom && gameState.guestName) {
-                await saveStudentScore(currentRoom, gameState.guestName, pointsEarned, result === 'win');
-            }
-            // Save score for logged-in students too
-            if (currentRoom && currentUser && currentUser.displayName) {
-                await saveStudentScore(currentRoom, currentUser.displayName, pointsEarned, result === 'win');
+            // Save score to class ranking
+            // Find the class code (could be currentRoom or from sessionStorage)
+            let classCodeForScore = null;
+            try {
+                const gs = JSON.parse(sessionStorage.getItem('guestSession') || '{}');
+                classCodeForScore = gs.classCode || null;
+            } catch(e) {}
+
+            const playerName = gameState.guestName || (currentUser ? currentUser.displayName : null);
+            const scoreClassCode = classCodeForScore || currentRoom;
+
+            if (scoreClassCode && playerName) {
+                try {
+                    await saveStudentScore(scoreClassCode, playerName, pointsEarned, result === 'win');
+                } catch(e) { console.error('Score save error:', e); }
             }
 
             // Cleanup happens only when user clicks "홈으로 돌아가기" button
