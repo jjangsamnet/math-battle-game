@@ -2449,6 +2449,7 @@
             });
 
             generateQuestion();
+            startQuestionTimer(); // Reset timer for next question
         }
 
         // Handle incorrect answer - lose 1 life
@@ -2464,13 +2465,14 @@
             sendPeerMessage({ type: 'INCORRECT' });
 
             // Check lose condition
-            if (gameState.myHealth === 0) {
+            if (gameState.myHealth <= 0) {
                 endGame('lose');
                 return;
             }
 
             answerInput.value = '';
             answerInput.focus();
+            startQuestionTimer(); // Reset timer for next attempt
         }
 
         // Handle opponent correct → my life -1
@@ -2525,17 +2527,62 @@
             document.getElementById('bossHealth').textContent = '🐉 '.repeat(gameState.bossHealth);
         }
 
-        // Start game timer
-        function startGameTimer() {
-            const timerInterval = setInterval(() => {
+        // Per-question timer (50 seconds per question)
+        let questionTimerInterval = null;
+        const TIME_PER_QUESTION = 50;
+
+        function startQuestionTimer() {
+            // Clear previous timer
+            if (questionTimerInterval) clearInterval(questionTimerInterval);
+            gameState.timeRemaining = TIME_PER_QUESTION;
+            document.getElementById('gameTimer').textContent = gameState.timeRemaining;
+
+            questionTimerInterval = setInterval(() => {
+                if (!gameState.gameActive) { clearInterval(questionTimerInterval); return; }
                 gameState.timeRemaining--;
                 document.getElementById('gameTimer').textContent = gameState.timeRemaining;
 
+                // Visual warning when time is low
+                const timerEl = document.getElementById('gameTimer');
+                if (gameState.timeRemaining <= 10) {
+                    timerEl.style.color = '#FF3B30';
+                    timerEl.style.fontWeight = '900';
+                } else {
+                    timerEl.style.color = '';
+                    timerEl.style.fontWeight = '';
+                }
+
                 if (gameState.timeRemaining <= 0) {
-                    clearInterval(timerInterval);
-                    endGame(gameState.myScore > gameState.opponentScore ? 'win' : gameState.myScore < gameState.opponentScore ? 'lose' : 'draw');
+                    clearInterval(questionTimerInterval);
+                    // Time's up! Lose 1 life
+                    handleTimeOut();
                 }
             }, 1000);
+        }
+
+        function handleTimeOut() {
+            playSound(300, 200);
+            gameState.myStreak = 0; // Reset streak
+            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
+            updateHealthDisplay();
+
+            sendPeerMessage({ type: 'INCORRECT' });
+
+            // Check lose condition
+            if (gameState.myHealth <= 0) {
+                endGame('lose');
+                return;
+            }
+
+            // Next question with fresh timer
+            generateQuestion();
+            startQuestionTimer();
+        }
+
+        // Legacy wrapper for speed mode (keeps overall timer)
+        function startGameTimer() {
+            gameState.timeRemaining = TIME_PER_QUESTION;
+            startQuestionTimer();
         }
 
         // Surrender button
@@ -2555,6 +2602,7 @@
         // End game
         async function endGame(result) {
             gameState.gameActive = false;
+            if (questionTimerInterval) { clearInterval(questionTimerInterval); questionTimerInterval = null; }
             gameScreen.classList.remove('active');
             gameEnd.classList.add('active');
 
