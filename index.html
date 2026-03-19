@@ -1295,39 +1295,22 @@
         <!-- Room Screen -->
         <div id="roomScreen">
             <div class="room-header">
-                <div class="room-title" id="roomTitle">게임 로비</div>
+                <div class="room-title" id="roomTitle">대전 매칭</div>
                 <button id="backBtn">돌아가기</button>
             </div>
 
-            <!-- Room Setup -->
+            <!-- Room Setup (simplified - auto matching) -->
             <div id="roomSetup" class="active">
-                <div class="setup-section">
-                    <label class="setup-label">캐릭터 선택</label>
-                    <div class="char-grid">
-                        <div class="char-option" data-char="🧙">🧙</div>
-                        <div class="char-option" data-char="🤖">🤖</div>
-                        <div class="char-option" data-char="👽">👽</div>
-                        <div class="char-option" data-char="🐱">🐱</div>
-                        <div class="char-option" data-char="🐶">🐶</div>
-                        <div class="char-option" data-char="🦁">🦁</div>
-                        <div class="char-option" data-char="🦊">🦊</div>
-                        <div class="char-option" data-char="🐻">🐻</div>
-                    </div>
+                <div style="text-align:center;padding:30px 20px;">
+                    <div style="font-size:48px;margin-bottom:16px;" id="matchingEmoji">⚔️</div>
+                    <div style="font-size:18px;font-weight:900;color:#333;margin-bottom:8px;" id="matchingModeText">서바이벌 모드</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:24px;" id="matchingStatusText">대전 상대를 찾고 있습니다...</div>
+                    <div style="width:60px;height:60px;border:4px solid #e0e0e0;border-top:4px solid #667eea;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+                    <div style="font-size:13px;color:#999;" id="matchingSubText">잠시만 기다려주세요</div>
                 </div>
-
-                <div class="setup-section">
-                    <label class="setup-label">게임 모드</label>
-                    <div class="mode-selector">
-                        <div class="mode-radio selected" data-mode="speed">⚡ Speed</div>
-                        <div class="mode-radio" data-mode="survival">🛡️ Survival</div>
-                        <div class="mode-radio" data-mode="boss">🐉 Boss</div>
-                    </div>
-                </div>
-
-                <!-- Room List -->
-                <div class="room-list" id="roomList"></div>
-
-                <button class="ready-btn" id="readyBtn">준비 완료!</button>
+                <button class="ready-btn" id="readyBtn" style="display:none;">준비 완료!</button>
+                <!-- Hidden elements for compatibility -->
+                <div class="room-list" id="roomList" style="display:none;"></div>
             </div>
 
             <!-- Room Waiting -->
@@ -2198,17 +2181,106 @@
             });
         }
 
-        // Enter Room Setup
-        function enterRoomSetup() {
+        // Enter Room Setup - auto create room and wait for match
+        async function enterRoomSetup() {
             homeScreen.classList.remove('active');
             roomScreen.classList.add('active');
             roomSetup.classList.add('active');
             roomWaiting.classList.remove('active');
             countdown.classList.remove('active');
-            gameState.isHost = true;
-            loadPublicRooms();
-            setupCharacterSelection();
-            setupModeSelection();
+            gameScreen.classList.remove('active');
+            gameEnd.classList.remove('active');
+
+            // Use profile character or random
+            if (!gameState.selectedChar) {
+                gameState.selectedChar = gameState.guestChar || selectedProfileChar || characters[Math.floor(Math.random() * characters.length)];
+            }
+
+            // Update matching UI
+            const modeNames = {speed:'⚡ 스피드 모드',survival:'🛡️ 서바이벌 모드',boss:'🐉 보스 모드'};
+            const el = document.getElementById('matchingModeText');
+            if (el) el.textContent = modeNames[gameState.mode] || '대전';
+            const statusEl = document.getElementById('matchingStatusText');
+            if (statusEl) statusEl.textContent = '대전 상대를 찾고 있습니다...';
+
+            // Try to find an existing waiting room first
+            try {
+                const snapshot = await db.collection('rooms')
+                    .where('status', '==', 'waiting')
+                    .where('gameMode', '==', gameState.mode)
+                    .where('playerCount', '==', 1)
+                    .limit(5).get();
+
+                let joined = false;
+                for (const doc of snapshot.docs) {
+                    const room = doc.data();
+                    // Don't join own room
+                    const myUid = currentUser ? currentUser.uid : gameState.guestUid;
+                    if (room.hostUid === myUid) continue;
+
+                    // Join this room as guest
+                    gameState.isHost = false;
+                    currentRoom = doc.id;
+                    const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
+                    await db.collection('rooms').doc(doc.id).update({
+                        playerCount: 2,
+                        guestUid: myUid,
+                        guestName: myName,
+                        guestChar: gameState.selectedChar,
+                        guestPeerId: peerConnection ? peerConnection.id : ''
+                    });
+
+                    if (statusEl) statusEl.textContent = '상대를 찾았습니다! 연결 중...';
+
+                    // Connect via PeerJS
+                    if (room.hostPeerId && peerConnection) {
+                        dataConnection = peerConnection.connect(room.hostPeerId);
+                        setupDataConnection();
+                    }
+                    setupRoomListener(db.collection('rooms').doc(doc.id));
+                    showRoomWaiting();
+                    joined = true;
+                    break;
+                }
+
+                if (!joined) {
+                    // No room found - create new room
+                    gameState.isHost = true;
+                    const roomCode = String(Math.floor(Math.random() * 900000) + 100000);
+                    const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
+                    const myUid = currentUser ? currentUser.uid : (gameState.guestUid || 'guest_' + Date.now());
+
+                    const roomRef = db.collection('rooms').doc(roomCode);
+                    await roomRef.set({
+                        roomCode: roomCode,
+                        roomName: myName + '의 대전방',
+                        gameMode: gameState.mode,
+                        operations: selectedOperations,
+                        hostUid: myUid,
+                        hostName: myName,
+                        hostPhoto: currentUser ? currentUser.photoURL : '',
+                        hostChar: gameState.selectedChar,
+                        hostPeerId: peerConnection ? peerConnection.id : '',
+                        playerCount: 1,
+                        status: 'waiting',
+                        hostReady: false,
+                        guestReady: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    currentRoom = roomCode;
+                    if (statusEl) statusEl.textContent = '대전 상대를 기다리고 있습니다...';
+                    if (document.getElementById('matchingSubText')) {
+                        document.getElementById('matchingSubText').textContent = '상대가 입장하면 자동으로 시작합니다';
+                    }
+
+                    // Listen for opponent joining
+                    setupRoomListener(roomRef);
+                }
+            } catch (error) {
+                console.error('Room setup error:', error);
+                if (statusEl) statusEl.textContent = '연결 중 오류가 발생했습니다. 다시 시도해주세요.';
+            }
         }
 
         // Character Selection
