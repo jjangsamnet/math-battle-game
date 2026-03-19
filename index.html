@@ -1225,7 +1225,15 @@
 
             <div class="main-content">
                 <div id="teacherDashboard" class="teacher-dashboard">
-                    <button class="teacher-btn" id="createClassBtn">📚 반 개설</button>
+                    <!-- 내 반 목록 (우선 표시) -->
+                    <div id="myClassesSection">
+                        <div style="font-weight:900;font-size:16px;margin-bottom:10px;color:#5C4B99;">📚 내 반 목록</div>
+                        <div id="myClassesList" style="margin-bottom:16px;">
+                            <div style="text-align:center;padding:12px;color:#999;font-size:14px;">로딩 중...</div>
+                        </div>
+                    </div>
+                    <!-- 추가 반 개설 (아래쪽) -->
+                    <button class="teacher-btn" id="createClassBtn" style="background:#f0edff;color:#5C4B99;border:2px dashed #5C4B99;font-size:14px;">➕ 추가 반 개설</button>
                     <div id="classCreationForm" class="class-creation-form">
                         <div class="form-group">
                             <label>반 이름</label>
@@ -1605,26 +1613,42 @@
                 }
 
                 const roomData = roomDoc.data();
-                if (roomData.guestUid) {
-                    alert('이미 참가자가 있는 반입니다');
+                const students = roomData.students || [];
+                const maxPlayers = roomData.maxPlayers || 40;
+
+                if (students.length >= maxPlayers) {
+                    alert('이 반은 인원이 가득 찼습니다 (' + maxPlayers + '명)');
                     return;
                 }
 
-                // Set guest as anonymous user
+                if (students.includes(studentName)) {
+                    // Already joined - just proceed
+                } else {
+                    // Add student to class
+                    await db.collection('rooms').doc(classCode).update({
+                        students: firebase.firestore.FieldValue.arrayUnion(studentName),
+                        playerCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                }
+
+                // Set guest info
                 gameState.guestName = studentName;
                 gameState.guestUid = 'guest_' + Date.now();
-                gameState.guestChar = '🧙';
+                gameState.guestChar = characters[Math.floor(Math.random() * characters.length)];
 
                 // Join room
                 currentRoom = classCode;
                 gameState.mode = roomData.gameMode || 'speed';
-                selectedOperations = roomData.operations || ['-'];
+                selectedOperations = roomData.operations || ['+','-'];
+                gameState.isHost = false;
+                gameState.isReady = false;
 
                 loginScreen.style.display = 'none';
                 guestLoginScreen.classList.remove('active');
-                roomScreen.classList.add('active');
-                roomSetup.classList.add('active');
-                loadPublicRooms();
+                homeScreen.classList.add('active');
+
+                // Show student dashboard with class ranking
+                showStudentClassView(classCode, studentName, roomData);
             } catch (error) {
                 alert('접속 실패: ' + error.message);
             }
@@ -1745,6 +1769,203 @@
             homeScreen.classList.add('active');
             document.getElementById('teacherDashboard').classList.add('active');
             await loadUserStats();
+            loadMyClasses(); // 내 반 목록 로드
+        }
+
+        // Load teacher's classes from Firestore
+        function loadMyClasses() {
+            if (!currentUser) return;
+            db.collection('rooms')
+                .where('hostUid', '==', currentUser.uid)
+                .onSnapshot((snapshot) => {
+                    const list = document.getElementById('myClassesList');
+                    if (snapshot.empty) {
+                        list.innerHTML = '<div style="text-align:center;padding:16px;color:#999;font-size:14px;background:#f8f6ff;border-radius:12px;">아직 개설된 반이 없습니다.<br>아래 "추가 반 개설"을 눌러주세요!</div>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach((doc) => {
+                        const c = doc.data();
+                        const modeIcon = {speed:'⚡',survival:'🛡️',boss:'🐉'}[c.gameMode]||'🎮';
+                        const modeName = {speed:'스피드',survival:'서바이벌',boss:'보스대전'}[c.gameMode]||'';
+                        const ops = (c.operations||[]).join(' ');
+                        const studentCount = c.students ? c.students.length : 0;
+                        html += `
+                        <div style="background:white;border:2px solid #e0d8f0;border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="showClassDetail('${doc.id}')">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="font-weight:900;font-size:15px;color:#333;">${escapeHtml(c.className||'이름없음')}</span>
+                                <span style="font-size:12px;background:#EDE7FF;color:#5C4B99;padding:3px 8px;border-radius:8px;font-weight:700;">${modeIcon} ${modeName}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#666;">
+                                <span>연산: ${ops}</span>
+                                <span>👦 ${studentCount}/40명</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                                <span style="font-size:20px;font-weight:900;color:#5C4B99;letter-spacing:3px;">🔑 ${c.classCode||doc.id}</span>
+                                <span style="font-size:12px;color:#999;">탭하여 상세보기</span>
+                            </div>
+                        </div>`;
+                    });
+                    list.innerHTML = html;
+                }, (error) => {
+                    console.error('Error loading classes:', error);
+                    document.getElementById('myClassesList').innerHTML = '<div style="text-align:center;padding:12px;color:#e53e3e;">반 목록 로드 실패</div>';
+                });
+        }
+
+        // Show class detail with student ranking
+        async function showClassDetail(roomId) {
+            try {
+                const doc = await db.collection('rooms').doc(roomId).get();
+                if (!doc.exists) { alert('반을 찾을 수 없습니다.'); return; }
+                const c = doc.data();
+                const modeIcon = {speed:'⚡',survival:'🛡️',boss:'🐉'}[c.gameMode]||'🎮';
+                const students = c.students || [];
+
+                // Build ranking from students' scores stored in 'classScores' subcollection
+                let rankingHtml = '';
+                try {
+                    const scoresSnap = await db.collection('rooms').doc(roomId).collection('scores')
+                        .orderBy('points', 'desc').limit(40).get();
+                    if (!scoresSnap.empty) {
+                        let rank = 1;
+                        const medals = ['🥇','🥈','🥉'];
+                        scoresSnap.forEach(sdoc => {
+                            const s = sdoc.data();
+                            const medal = rank <= 3 ? medals[rank-1] : `${rank}.`;
+                            rankingHtml += `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:${rank<=3?'#FFFDE7':'white'};border-radius:8px;margin-bottom:4px;">
+                                <span style="font-size:${rank<=3?'18px':'13px'};min-width:28px;text-align:center;font-weight:900;">${medal}</span>
+                                <span style="flex:1;font-size:13px;font-weight:600;">${escapeHtml(s.name||'?')}</span>
+                                <span style="font-weight:900;color:#5C4B99;">${s.points||0}P</span>
+                            </div>`;
+                            rank++;
+                        });
+                    } else {
+                        rankingHtml = '<div style="text-align:center;padding:12px;color:#999;font-size:13px;">아직 게임 기록이 없습니다</div>';
+                    }
+                } catch(e) {
+                    rankingHtml = '<div style="text-align:center;padding:12px;color:#999;font-size:13px;">랭킹 데이터 없음</div>';
+                }
+
+                const detailHtml = `
+                <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="this.remove()">
+                    <div style="background:white;border-radius:20px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.25);" onclick="event.stopPropagation()">
+                        <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:20px;border-radius:20px 20px 0 0;text-align:center;">
+                            <div style="font-size:24px;font-weight:900;">${escapeHtml(c.className||'')}</div>
+                            <div style="font-size:14px;opacity:0.8;margin-top:4px;">${modeIcon} ${c.operations?.join(' ')||''}</div>
+                            <div style="font-size:28px;font-weight:900;letter-spacing:4px;margin-top:8px;">🔑 ${c.classCode||roomId}</div>
+                            <div style="font-size:12px;opacity:0.7;">학생에게 이 코드를 알려주세요</div>
+                        </div>
+                        <div style="padding:16px;">
+                            <div style="font-weight:900;font-size:14px;margin-bottom:8px;">👦 접속 학생 (${students.length}/40명)</div>
+                            <div style="background:#f8f6ff;border-radius:10px;padding:10px;margin-bottom:12px;max-height:100px;overflow-y:auto;font-size:13px;">
+                                ${students.length ? students.map(s => `<span style="display:inline-block;background:white;padding:3px 8px;border-radius:6px;margin:2px;font-size:12px;">${escapeHtml(s)}</span>`).join('') : '<span style="color:#999;">아직 접속한 학생이 없습니다</span>'}
+                            </div>
+                            <div style="font-weight:900;font-size:14px;margin-bottom:8px;">🏆 학생 랭킹</div>
+                            <div style="background:#f8f6ff;border-radius:10px;padding:10px;max-height:200px;overflow-y:auto;">
+                                ${rankingHtml}
+                            </div>
+                        </div>
+                        <div style="padding:12px;text-align:center;border-top:1px solid #eee;">
+                            <button onclick="this.closest('[style*=position]').remove()" style="padding:10px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">닫기</button>
+                            <button onclick="deleteClass('${roomId}');this.closest('[style*=position]').remove()" style="padding:10px 20px;background:#e53e3e;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;margin-left:8px;">반 삭제</button>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', detailHtml);
+            } catch(error) {
+                alert('상세정보 로드 실패: ' + error.message);
+            }
+        }
+
+        async function deleteClass(roomId) {
+            if (!confirm('이 반을 삭제하시겠습니까?')) return;
+            try {
+                await db.collection('rooms').doc(roomId).delete();
+                alert('반이 삭제되었습니다.');
+            } catch(e) { alert('삭제 실패: ' + e.message); }
+        }
+
+        // Student class view with real-time ranking
+        let classRankingUnsubscribe = null;
+        function showStudentClassView(classCode, studentName, roomData) {
+            const mainContent = document.querySelector('.main-content') || document.getElementById('homeScreen');
+            // Insert student class view at top of main content
+            let viewDiv = document.getElementById('studentClassView');
+            if (!viewDiv) {
+                viewDiv = document.createElement('div');
+                viewDiv.id = 'studentClassView';
+                const mc = document.querySelector('#homeScreen .main-content');
+                if (mc) mc.insertBefore(viewDiv, mc.firstChild);
+            }
+
+            const modeIcon = {speed:'⚡',survival:'🛡️',boss:'🐉'}[roomData.gameMode]||'🎮';
+            viewDiv.innerHTML = `
+                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:16px;padding:16px;margin-bottom:12px;">
+                    <div style="font-size:18px;font-weight:900;">${escapeHtml(roomData.className||'')}</div>
+                    <div style="font-size:13px;opacity:0.8;">${modeIcon} ${(roomData.operations||[]).join(' ')} · 반코드: ${classCode}</div>
+                    <div style="font-size:14px;margin-top:6px;">👤 ${escapeHtml(studentName)}</div>
+                </div>
+                <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#5C4B99;">🏆 실시간 반 랭킹</div>
+                <div id="classRankingContainer" style="background:#f8f6ff;border:2px solid #e0d8f0;border-radius:12px;padding:10px;margin-bottom:16px;max-height:250px;overflow-y:auto;">
+                    <div style="text-align:center;padding:12px;color:#999;">로딩 중...</div>
+                </div>
+            `;
+
+            // Start real-time ranking listener
+            if (classRankingUnsubscribe) classRankingUnsubscribe();
+            classRankingUnsubscribe = db.collection('rooms').doc(classCode).collection('scores')
+                .orderBy('points', 'desc').limit(40)
+                .onSnapshot((snapshot) => {
+                    const container = document.getElementById('classRankingContainer');
+                    if (!container) return;
+                    if (snapshot.empty) {
+                        container.innerHTML = '<div style="text-align:center;padding:12px;color:#999;font-size:13px;">아직 게임 기록이 없습니다. 게임을 시작해보세요!</div>';
+                        return;
+                    }
+                    let html = '';
+                    let rank = 1;
+                    const medals = ['🥇','🥈','🥉'];
+                    snapshot.forEach(doc => {
+                        const s = doc.data();
+                        const isMe = s.name === studentName;
+                        const medal = rank <= 3 ? medals[rank-1] : `${rank}.`;
+                        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${isMe?'#EDE7FF':rank<=3?'#FFFDE7':'white'};border-radius:8px;margin-bottom:4px;${isMe?'border:2px solid #667eea;':''}">
+                            <span style="font-size:${rank<=3?'18px':'12px'};min-width:28px;text-align:center;font-weight:900;">${medal}</span>
+                            <span style="flex:1;font-size:13px;font-weight:${isMe?'900':'600'};color:${isMe?'#5C4B99':'#333'};">${escapeHtml(s.name||'?')}${isMe?' (나)':''}</span>
+                            <span style="font-weight:900;font-size:13px;color:${rank===1?'#E65100':'#667eea'};">${s.points||0}P</span>
+                            <span style="font-size:11px;color:#999;">${s.wins||0}승</span>
+                        </div>`;
+                        rank++;
+                    });
+                    container.innerHTML = html;
+                }, (error) => {
+                    console.error('Ranking error:', error);
+                });
+        }
+
+        // Save student score to class ranking
+        async function saveStudentScore(classCode, studentName, points, won) {
+            try {
+                const scoreRef = db.collection('rooms').doc(classCode).collection('scores').doc(studentName);
+                const scoreDoc = await scoreRef.get();
+                if (scoreDoc.exists) {
+                    await scoreRef.update({
+                        points: firebase.firestore.FieldValue.increment(points),
+                        gamesPlayed: firebase.firestore.FieldValue.increment(1),
+                        wins: firebase.firestore.FieldValue.increment(won ? 1 : 0),
+                        lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    await scoreRef.set({
+                        name: studentName,
+                        points: points,
+                        gamesPlayed: 1,
+                        wins: won ? 1 : 0,
+                        lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch(e) { console.error('Score save error:', e); }
         }
 
         // Show Home
@@ -1853,17 +2074,11 @@
                     hostUid: currentUser.uid,
                     hostName: currentUser.displayName || 'Teacher',
                     hostPhoto: currentUser.photoURL || '',
-                    hostChar: '',
-                    hostPeerId: '',
-                    guestUid: null,
-                    guestName: null,
-                    guestPhoto: null,
-                    guestChar: null,
-                    guestPeerId: null,
-                    playerCount: 1,
+                    maxPlayers: 40,
+                    students: [],
+                    playerCount: 0,
                     status: 'waiting',
-                    hostReady: false,
-                    guestReady: false,
+                    isClassRoom: true,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -2543,6 +2758,15 @@
                 } catch (error) {
                     console.error('Error updating stats:', error);
                 }
+            }
+
+            // Save score to class ranking (for guest/student users)
+            if (currentRoom && gameState.guestName) {
+                await saveStudentScore(currentRoom, gameState.guestName, pointsEarned, result === 'win');
+            }
+            // Save score for logged-in students too
+            if (currentRoom && currentUser && currentUser.displayName) {
+                await saveStudentScore(currentRoom, currentUser.displayName, pointsEarned, result === 'win');
             }
 
             // Cleanup room
