@@ -1282,9 +1282,11 @@
                     </div>
                 </div>
 
-                <button class="mode-btn" id="speedModeBtn">⚡ Speed (빨리풀기)</button>
-                <button class="mode-btn" id="survivalModeBtn">🛡️ Survival (생존)</button>
-                <button class="mode-btn" id="bossModeBtn">🐉 Boss (몬스터)</button>
+                <div id="gameModeButtons" style="display:none;">
+                    <button class="mode-btn" id="speedModeBtn">⚡ Speed (빨리풀기)</button>
+                    <button class="mode-btn" id="survivalModeBtn">🛡️ Survival (생존)</button>
+                    <button class="mode-btn" id="bossModeBtn">🐉 Boss (몬스터)</button>
+                </div>
             </div>
 
             <button class="logout-btn" id="logoutBtn">로그아웃</button>
@@ -1984,6 +1986,7 @@
             teacherRegistrationScreen.classList.remove('active');
             homeScreen.classList.add('active');
             document.getElementById('teacherDashboard').classList.remove('active');
+            document.getElementById('gameModeButtons').style.display = 'block'; // 학생에게 게임 모드 표시
             await loadUserStats();
         }
 
