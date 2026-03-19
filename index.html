@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수학 배틀 - Math Battle Game</title>
+    <title>수학 배틀 - 뺄셈의 제왕</title>
     <style>
         * {
             margin: 0;
@@ -1095,7 +1095,8 @@
         <div id="loginScreen">
             <div class="logo">🎮</div>
             <div class="title">수학 배틀</div>
-            <div class="subtitle">친구와 함께 수학 문제를 풀어보세요!</div>
+            <div style="font-size:18px;color:#FFD700;font-weight:bold;margin-bottom:8px;">👑 뺄셈의 제왕 👑</div>
+            <div class="subtitle">뺄셈 실력으로 상대를 쓰러뜨려라!</div>
             <button class="google-login-btn" id="googleLoginBtn">
                 <div class="google-logo">G</div>
                 Google로 로그인
@@ -1117,22 +1118,25 @@
             </div>
 
             <div class="main-content">
+                <div style="text-align:center;padding:8px;margin-bottom:4px;">
+                    <span style="font-size:20px;font-weight:900;color:#5C4B99;">👑 뺄셈의 제왕 👑</span>
+                </div>
                 <div class="section-title">게임 모드 선택</div>
                 <div class="game-modes">
                     <button class="game-mode-btn" data-mode="speed">
                         <div class="mode-icon">⚡</div>
                         <div class="mode-name">스피드 모드</div>
-                        <div class="mode-desc">30초 안에 가장 많이 풀기</div>
+                        <div class="mode-desc">30초 안에 뺄셈을 가장 많이 풀기</div>
                     </button>
                     <button class="game-mode-btn" data-mode="survival">
                         <div class="mode-icon">🛡️</div>
                         <div class="mode-name">서바이벌 모드</div>
-                        <div class="mode-desc">상대방 체력을 모두 없애기</div>
+                        <div class="mode-desc">뺄셈으로 상대 생명을 빼앗아라! (생명 10개)</div>
                     </button>
                     <button class="game-mode-btn" data-mode="boss">
                         <div class="mode-icon">🐉</div>
                         <div class="mode-name">보스 모드</div>
-                        <div class="mode-desc">친구와 함께 보스를 물리치기</div>
+                        <div class="mode-desc">함께 뺄셈을 풀어 보스를 물리쳐라!</div>
                     </button>
                 </div>
 
@@ -1251,11 +1255,11 @@
                     <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px;">체력</div>
                     <div style="display: flex; justify-content: space-around;">
                         <div>
-                            <div class="health-bar" id="player1Health">❤️ ❤️ ❤️</div>
+                            <div class="health-bar" id="player1Health">❤️×10</div>
                             <div style="font-size: 12px; color: #666;">내 체력</div>
                         </div>
                         <div>
-                            <div class="health-bar" id="player2Health">❤️ ❤️ ❤️</div>
+                            <div class="health-bar" id="player2Health">❤️×10</div>
                             <div style="font-size: 12px; color: #666;">상대 체력</div>
                         </div>
                     </div>
@@ -1263,7 +1267,7 @@
 
                 <div id="bossHealthSection" style="display: none; text-align: center; margin-bottom: 20px;">
                     <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px;">보스 체력</div>
-                    <div class="health-bar" id="bossHealth" style="justify-content: center;">🐉 🐉 🐉 🐉 🐉</div>
+                    <div class="health-bar" id="bossHealth" style="justify-content: center;">🐉 HP ×10</div>
                 </div>
 
                 <div class="question-area">
@@ -1386,9 +1390,12 @@
             guestChar: null,
             myScore: 0,
             opponentScore: 0,
-            myHealth: 3,
-            opponentHealth: 3,
-            bossHealth: 5,
+            myHealth: 10,
+            opponentHealth: 10,
+            bossHealth: 10,
+            myStreak: 0,
+            opponentStreak: 0,
+            difficulty: 1,
             timeRemaining: 30,
             isHost: false,
             isReady: false,
@@ -2261,8 +2268,11 @@
             gameState.gameActive = true;
             gameState.myScore = 0;
             gameState.opponentScore = 0;
-            gameState.myHealth = 3;
-            gameState.opponentHealth = 3;
+            gameState.myHealth = 10;
+            gameState.opponentHealth = 10;
+            gameState.myStreak = 0;
+            gameState.opponentStreak = 0;
+            gameState.difficulty = 1;
             gameState.bossHealth = 5;
             gameState.timeRemaining = 30;
 
@@ -2292,25 +2302,72 @@
         }
 
         // Generate question
+        // Subtraction-only question generator with progressive difficulty
+        // Difficulty 1: 한 자릿수 - 한 자릿수 (받아내림 없음, 예: 9-3)
+        // Difficulty 2: 두 자릿수 - 한 자릿수 (받아내림 없음, 예: 27-3)
+        // Difficulty 3: 두 자릿수 - 한 자릿수 (받아내림 있음, 예: 23-7)
+        // Difficulty 4: 두 자릿수 - 두 자릿수 (받아내림 없음, 예: 58-23)
+        // Difficulty 5: 두 자릿수 - 두 자릿수 (받아내림 있음, 예: 52-27)
+        // Difficulty 6: 세 자릿수 - 두 자릿수 (받아내림 없음, 예: 385-42)
+        // Difficulty 7: 세 자릿수 - 두 자릿수 (받아내림 있음, 예: 403-57)
+        // Difficulty 8+: 세 자릿수 - 세 자릿수 (받아내림 있음, 예: 712-358)
         function generateQuestion() {
-            const ops = ['+', '-', '*'];
-            const op = ops[Math.floor(Math.random() * ops.length)];
-            const a = Math.floor(Math.random() * 20) + 1;
-            const b = Math.floor(Math.random() * 20) + 1;
+            const diff = gameState.difficulty || 1;
+            let a, b;
 
-            let answer;
-            let question;
-
-            if (op === '+') {
-                answer = a + b;
-                question = `${a} + ${b}`;
-            } else if (op === '-') {
-                answer = a - b;
-                question = `${a} - ${b}`;
+            if (diff <= 1) {
+                // 한 자릿수 - 한 자릿수, 받아내림 없음
+                a = Math.floor(Math.random() * 8) + 2; // 2~9
+                b = Math.floor(Math.random() * a) + 1;  // 1~(a-1), 결과 >= 0
+            } else if (diff === 2) {
+                // 두 자릿수 - 한 자릿수, 받아내림 없음
+                const tens = Math.floor(Math.random() * 9) + 1; // 1~9
+                const ones = Math.floor(Math.random() * 8) + 2; // 2~9
+                a = tens * 10 + ones;
+                b = Math.floor(Math.random() * ones) + 1; // 1~ones (받아내림 없음)
+            } else if (diff === 3) {
+                // 두 자릿수 - 한 자릿수, 받아내림 있음
+                const tens = Math.floor(Math.random() * 8) + 2; // 2~9
+                const ones = Math.floor(Math.random() * 5); // 0~4
+                a = tens * 10 + ones;
+                b = ones + Math.floor(Math.random() * (9 - ones)) + 1; // ones보다 큰 수
+                if (b > 9) b = 9;
+            } else if (diff === 4) {
+                // 두 자릿수 - 두 자릿수, 받아내림 없음
+                const t1 = Math.floor(Math.random() * 7) + 3; // 3~9
+                const o1 = Math.floor(Math.random() * 7) + 2; // 2~8
+                a = t1 * 10 + o1;
+                const t2 = Math.floor(Math.random() * t1) + 1; // 1~(t1-1)
+                const o2 = Math.floor(Math.random() * o1) + 1; // 1~(o1-1)
+                b = t2 * 10 + o2;
+            } else if (diff === 5) {
+                // 두 자릿수 - 두 자릿수, 받아내림 있음
+                a = Math.floor(Math.random() * 50) + 40; // 40~89
+                b = Math.floor(Math.random() * 30) + 11; // 11~40
+                if (b >= a) b = a - Math.floor(Math.random() * 10) - 1;
+                if (b < 10) b = 10 + Math.floor(Math.random() * 10);
+            } else if (diff === 6) {
+                // 세 자릿수 - 두 자릿수, 받아내림 없음
+                a = Math.floor(Math.random() * 400) + 200; // 200~599
+                b = Math.floor(Math.random() * 40) + 11;   // 11~50
+                // 일의 자리 받아내림 없도록 조정
+                if ((a % 10) < (b % 10)) a = a - (a % 10) + (b % 10) + Math.floor(Math.random() * 3);
+            } else if (diff === 7) {
+                // 세 자릿수 - 두 자릿수, 받아내림 있음
+                a = Math.floor(Math.random() * 400) + 300; // 300~699
+                b = Math.floor(Math.random() * 60) + 30;   // 30~89
             } else {
-                answer = a * b;
-                question = `${a} × ${b}`;
+                // 세 자릿수 - 세 자릿수, 받아내림 있음
+                a = Math.floor(Math.random() * 500) + 400; // 400~899
+                b = Math.floor(Math.random() * 300) + 100;  // 100~399
+                if (b >= a) b = a - Math.floor(Math.random() * 50) - 10;
             }
+
+            // 항상 a > b 보장
+            if (a <= b) { const temp = a; a = b + Math.floor(Math.random() * 5) + 1; }
+
+            const answer = a - b;
+            const question = `${a} - ${b}`;
 
             gameState.currentQuestion = {
                 question: question,
@@ -2337,9 +2394,19 @@
         // Handle correct answer
         function handleCorrectAnswer() {
             gameState.myScore++;
+            gameState.myStreak++;
             playSound(1200, 100);
 
-            // Update health in survival mode
+            // Streak bonus: 3 consecutive correct → +1 life
+            if (gameState.myStreak > 0 && gameState.myStreak % 3 === 0) {
+                gameState.myHealth++;
+                playSound(1600, 150); // bonus sound
+            }
+
+            // Difficulty increase every 5 correct answers
+            gameState.difficulty = Math.min(8, 1 + Math.floor(gameState.myScore / 5));
+
+            // Opponent loses 1 life (in all modes)
             if (gameState.mode === 'survival') {
                 gameState.opponentHealth = Math.max(0, gameState.opponentHealth - 1);
             } else if (gameState.mode === 'boss') {
@@ -2366,19 +2433,20 @@
             generateQuestion();
         }
 
-        // Handle incorrect answer
+        // Handle incorrect answer - lose 1 life
         function handleIncorrectAnswer() {
             playSound(400, 100);
+            gameState.myStreak = 0; // Reset streak
 
-            // Update health in survival mode
-            if (gameState.mode === 'survival') {
-                gameState.myHealth = Math.max(0, gameState.myHealth - 1);
-            }
+            // My life -1 (in all modes when I answer wrong)
+            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
 
             updateHealthDisplay();
 
+            sendPeerMessage({ type: 'INCORRECT' });
+
             // Check lose condition
-            if (gameState.mode === 'survival' && gameState.myHealth === 0) {
+            if (gameState.myHealth === 0) {
                 endGame('lose');
                 return;
             }
@@ -2387,34 +2455,35 @@
             answerInput.focus();
         }
 
-        // Handle opponent correct
+        // Handle opponent correct → my life -1
         function handleOpponentCorrect() {
             gameState.opponentScore++;
             document.getElementById('player2Score').textContent = gameState.opponentScore;
 
-            if (gameState.mode === 'survival') {
-                gameState.myHealth = Math.max(0, gameState.myHealth - 1);
-                updateHealthDisplay();
-                if (gameState.myHealth === 0) {
-                    endGame('lose');
-                    return;
-                }
-            } else if (gameState.mode === 'boss') {
-                // Boss takes damage from opponent
+            // Opponent got it right → I lose 1 life
+            gameState.myHealth = Math.max(0, gameState.myHealth - 1);
+            updateHealthDisplay();
+
+            if (gameState.mode === 'boss') {
                 gameState.bossHealth = Math.max(0, gameState.bossHealth - 1);
                 updateBossHealthDisplay();
             }
+
+            if (gameState.myHealth === 0) {
+                endGame('lose');
+                return;
+            }
         }
 
-        // Handle opponent incorrect
+        // Handle opponent incorrect → opponent loses 1 life (already handled on their side)
         function handleOpponentIncorrect() {
-            if (gameState.mode === 'survival') {
-                gameState.opponentHealth = Math.max(0, gameState.opponentHealth - 1);
-                updateHealthDisplay();
-                if (gameState.opponentHealth === 0) {
-                    endGame('win');
-                    return;
-                }
+            // Opponent's life loss is handled on their own device
+            // We just update the display
+            gameState.opponentHealth = Math.max(0, gameState.opponentHealth - 1);
+            updateHealthDisplay();
+            if (gameState.opponentHealth === 0) {
+                endGame('win');
+                return;
             }
         }
 
@@ -2427,8 +2496,10 @@
 
         // Update health display
         function updateHealthDisplay() {
-            document.getElementById('player1Health').textContent = '❤️ '.repeat(gameState.myHealth);
-            document.getElementById('player2Health').textContent = '❤️ '.repeat(gameState.opponentHealth);
+            const h1 = gameState.myHealth;
+            const h2 = gameState.opponentHealth;
+            document.getElementById('player1Health').innerHTML = `❤️×${h1}` + (gameState.myStreak >= 2 ? ` <span style="color:#FF9800;font-size:11px;">🔥${gameState.myStreak}연속</span>` : '');
+            document.getElementById('player2Health').innerHTML = `❤️×${h2}`;
         }
 
         // Update boss health display
@@ -2645,8 +2716,11 @@
                     guestChar: null,
                     myScore: 0,
                     opponentScore: 0,
-                    myHealth: 3,
-                    opponentHealth: 3,
+                    myHealth: 10,
+                    opponentHealth: 10,
+                    myStreak: 0,
+                    opponentStreak: 0,
+                    difficulty: 1,
                     bossHealth: 5,
                     timeRemaining: 30,
                     isHost: false,
