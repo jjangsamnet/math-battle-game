@@ -1107,8 +1107,11 @@
         <div id="homeScreen">
             <div class="header">
                 <div class="user-info">
-                    <img id="userAvatar" class="user-avatar" src="" alt="프로필">
-                    <div class="user-name" id="userName">사용자</div>
+                    <img id="userAvatar" class="user-avatar" src="" alt="프로필" onclick="showProfileModal()" style="cursor:pointer;border:2px solid rgba(255,255,255,0.5);transition:all 0.2s;" onmouseover="this.style.borderColor='#FFD700';this.style.transform='scale(1.1)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.5)';this.style.transform='scale(1)'">
+                    <div>
+                        <div class="user-name" id="userName">사용자</div>
+                        <div style="font-size:11px;opacity:0.7;cursor:pointer;" onclick="showProfileModal()">프로필 수정 ✏️</div>
+                    </div>
                 </div>
                 <div class="user-stats">
                     <div class="stat-item">포인트: <span id="userPoints">0</span></div>
@@ -1168,6 +1171,38 @@
                 <div id="fullRankingList" style="padding:12px;overflow-y:auto;max-height:55vh;"></div>
                 <div style="padding:12px;text-align:center;">
                     <button onclick="closeFullRanking()" style="padding:10px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Edit Modal -->
+        <div class="modal" id="profileModal">
+            <div style="background:white;border-radius:20px;max-width:400px;width:90%;margin:auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+                <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:24px;text-align:center;">
+                    <img id="profileModalAvatar" src="" style="width:64px;height:64px;border-radius:50%;border:3px solid white;object-fit:cover;margin-bottom:8px;">
+                    <div style="font-size:18px;font-weight:900;">개인정보 수정</div>
+                    <div id="profileModalEmail" style="font-size:12px;opacity:0.75;margin-top:4px;"></div>
+                </div>
+                <div style="padding:20px;">
+                    <div style="margin-bottom:16px;">
+                        <label style="font-weight:700;font-size:13px;color:#555;display:block;margin-bottom:6px;">닉네임</label>
+                        <input type="text" id="profileNickname" maxlength="12" placeholder="게임에서 표시될 이름" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;outline:none;text-align:center;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#ddd'">
+                    </div>
+                    <div style="background:#f8f6ff;border-radius:10px;padding:12px;margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px;">
+                            <span>🏆 포인트</span><span id="profilePoints" style="font-weight:700;color:#667eea;">0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px;">
+                            <span>🎮 게임 수</span><span id="profileGames" style="font-weight:700;">0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;">
+                            <span>🏅 승리 수</span><span id="profileWins" style="font-weight:700;">0</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="closeProfileModal()" style="flex:1;padding:12px;background:#e9ecef;color:#495057;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">취소</button>
+                        <button onclick="saveProfile()" style="flex:1;padding:12px;background:#667eea;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">저장</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2909,6 +2944,57 @@
 
         function closeFullRanking() {
             document.getElementById('rankingModal').classList.remove('active');
+        }
+
+        // ═══ PROFILE MODAL ═══
+        async function showProfileModal() {
+            if (!currentUser) return;
+            const modal = document.getElementById('profileModal');
+            document.getElementById('profileModalAvatar').src = currentUser.photoURL || 'https://via.placeholder.com/64';
+            document.getElementById('profileModalEmail').textContent = currentUser.email || '';
+
+            // Load current data from Firestore
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('profileNickname').value = data.name || currentUser.displayName || '';
+                    document.getElementById('profilePoints').textContent = (typeof data.points === 'number' ? data.points : 0) + 'P';
+                    document.getElementById('profileGames').textContent = (data.gamesPlayed || 0) + '회';
+                    document.getElementById('profileWins').textContent = (data.wins || 0) + '회';
+                } else {
+                    document.getElementById('profileNickname').value = currentUser.displayName || '';
+                }
+            } catch (e) {
+                document.getElementById('profileNickname').value = currentUser.displayName || '';
+            }
+
+            modal.classList.add('active');
+            document.getElementById('profileNickname').focus();
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        async function saveProfile() {
+            const nickname = document.getElementById('profileNickname').value.trim();
+            if (!nickname) { alert('닉네임을 입력해주세요!'); return; }
+            if (nickname.length < 1 || nickname.length > 12) { alert('닉네임은 1~12자로 입력해주세요.'); return; }
+
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    name: nickname
+                });
+                // Update local state
+                currentUser.displayName = nickname;
+                document.getElementById('userName').textContent = nickname;
+                closeProfileModal();
+                alert('닉네임이 변경되었습니다: ' + nickname);
+                loadRanking(); // Refresh ranking to show new name
+            } catch (error) {
+                alert('저장 실패: ' + error.message);
+            }
         }
 
         // Initialize
