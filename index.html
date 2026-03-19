@@ -273,6 +273,12 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
         }
 
+        .room-card.my-room {
+            border-color: #667eea;
+            background: #F0F4FF;
+            opacity: 0.7;
+        }
+
         .room-card-header {
             display: flex;
             justify-content: space-between;
@@ -1544,6 +1550,9 @@
                 await userRef.update(updateData);
             }
 
+            // Cleanup any stale rooms I own from previous sessions
+            cleanupMyStaleRooms(user.uid);
+
             loadUserStats();
             loadPublicRooms();
             setupGameModeSelection();
@@ -1563,6 +1572,42 @@
                 }
             } catch (error) {
                 console.error('Error loading user stats:', error);
+            }
+        }
+
+        // Cleanup stale rooms owned by this user from previous sessions
+        async function cleanupMyStaleRooms(uid) {
+            try {
+                const myRooms = await db.collection('rooms')
+                    .where('hostUid', '==', uid)
+                    .get();
+                myRooms.forEach((doc) => {
+                    const room = doc.data();
+                    // Delete rooms that are waiting with only host (abandoned rooms)
+                    if (room.status === 'waiting' && (!room.playerCount || room.playerCount <= 1)) {
+                        db.collection('rooms').doc(doc.id).delete().catch(() => {});
+                    }
+                });
+                // Also cleanup rooms where I'm a guest but shouldn't be
+                const guestRooms = await db.collection('rooms')
+                    .where('guestUid', '==', uid)
+                    .get();
+                guestRooms.forEach((doc) => {
+                    const room = doc.data();
+                    if (room.status === 'waiting') {
+                        db.collection('rooms').doc(doc.id).update({
+                            playerCount: 1,
+                            guestUid: firebase.firestore.FieldValue.delete(),
+                            guestName: firebase.firestore.FieldValue.delete(),
+                            guestPhoto: firebase.firestore.FieldValue.delete(),
+                            guestChar: firebase.firestore.FieldValue.delete(),
+                            guestPeerId: firebase.firestore.FieldValue.delete(),
+                            guestReady: false
+                        }).catch(() => {});
+                    }
+                });
+            } catch (error) {
+                console.log('Cleanup error:', error);
             }
         }
 
@@ -1598,62 +1643,65 @@
 
         // Render public rooms
         function renderPublicRooms(rooms) {
-            if (rooms.length === 0) {
-                publicRoomsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">공개 방이 없습니다. 새로운 방을 만들어보세요!</div>';
+            // Filter out stale rooms (created more than 2 hours ago)
+            const now = Date.now() / 1000;
+            const validRooms = rooms.filter(room => {
+                if (room.createdAt && room.createdAt.seconds) {
+                    const ageHours = (now - room.createdAt.seconds) / 3600;
+                    if (ageHours > 2) {
+                        // Auto-delete stale room
+                        db.collection('rooms').doc(room.id).delete().catch(() => {});
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (validRooms.length === 0) {
+                publicRoomsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">현재 개설된 방이 없습니다. 새로운 방을 만들어보세요! 🎮</div>';
                 return;
             }
 
             let html = '<div class="rooms-grid">';
-            rooms.forEach((room) => {
-                const modeIcon = {
-                    'speed': '⚡',
-                    'survival': '🛡️',
-                    'boss': '🐉'
-                }[room.mode] || '-';
-
-                const modeName = {
-                    'speed': '스피드',
-                    'survival': '서바이벌',
-                    'boss': '보스대전'
-                }[room.mode] || '-';
+            validRooms.forEach((room) => {
+                const modeIcon = { 'speed': '⚡', 'survival': '🛡️', 'boss': '🐉' }[room.mode] || '-';
+                const modeName = { 'speed': '스피드', 'survival': '서바이벌', 'boss': '보스대전' }[room.mode] || '-';
 
                 const isFull = room.playerCount >= 2;
                 const isPlaying = room.status === 'playing';
+                const isMyRoom = currentUser && (room.hostUid === currentUser.uid || room.guestUid === currentUser.uid);
                 const lockIcon = room.hasPassword ? '🔒' : '';
-                const statusText = isFull ? (isPlaying ? '게임중' : '인원 가득') : `${room.playerCount}/2 명`;
+                const statusText = isFull ? (isPlaying ? '게임중' : '인원 가득') : `${room.playerCount || 1}/2 명`;
+
+                let btnText = '입장';
+                let btnDisabled = false;
+                if (isMyRoom) { btnText = '내 방'; btnDisabled = true; }
+                else if (isFull || isPlaying) { btnText = '대기중'; btnDisabled = true; }
 
                 html += `
-                    <div class="room-card">
+                    <div class="room-card${isMyRoom ? ' my-room' : ''}">
                         <div class="room-card-header">
-                            <div class="room-name">${escapeHtml(room.roomName)}</div>
+                            <div class="room-name">${escapeHtml(room.roomName || '이름 없음')}</div>
                             <div class="room-lock-icon">${lockIcon}</div>
                         </div>
                         <div class="room-card-info">
                             <div class="room-host">
                                 <img class="room-host-avatar" src="${room.hostPhoto || 'https://via.placeholder.com/24'}" alt="호스트">
-                                <span>${escapeHtml(room.hostName)}</span>
+                                <span>${escapeHtml(room.hostName || '?')}</span>
                             </div>
                             <div class="room-divider">·</div>
-                            <div class="room-mode">
-                                <span>${modeIcon}</span>
-                                <span>${modeName}</span>
-                            </div>
+                            <div class="room-mode"><span>${modeIcon}</span> <span>${modeName}</span></div>
                             <div class="room-divider">·</div>
                             <span>${statusText}</span>
                         </div>
                         <div class="room-card-footer">
-                            <div class="room-status ${isFull ? 'full' : ''}">
-                                ${isFull ? '인원 가득' : '입장 가능'}
-                            </div>
-                            <button class="room-join-btn" ${isFull || isPlaying ? 'disabled' : ''} onclick="joinPublicRoom('${room.id}', ${room.hasPassword})">
-                                입장
-                            </button>
+                            <div class="room-status ${isFull ? 'full' : ''}">${isFull ? '인원 가득' : '입장 가능'}</div>
+                            <button class="room-join-btn" ${btnDisabled ? 'disabled' : ''} onclick="joinPublicRoom('${room.id}', ${room.hasPassword})">${btnText}</button>
                         </div>
                     </div>
                 `;
             });
             html += '</div>';
-
             publicRoomsContainer.innerHTML = html;
         }
 
@@ -1698,16 +1746,37 @@
         // Proceed to join room
         async function proceedToJoinRoom(roomId, password) {
             try {
+                // Prevent joining if already in a room
+                if (currentRoom) {
+                    alert('이미 다른 방에 입장해 있습니다. 먼저 나가주세요.');
+                    passwordModal.classList.remove('active');
+                    return;
+                }
+
                 const roomRef = db.collection('rooms').doc(roomId);
                 const roomDoc = await roomRef.get();
 
                 if (!roomDoc.exists) {
-                    alert('방을 찾을 수 없습니다.');
+                    alert('방을 찾을 수 없습니다. (이미 삭제된 방)');
                     passwordModal.classList.remove('active');
                     return;
                 }
 
                 const room = roomDoc.data();
+
+                // Prevent joining own room
+                if (room.hostUid === currentUser.uid) {
+                    alert('본인이 만든 방에는 입장할 수 없습니다.');
+                    passwordModal.classList.remove('active');
+                    return;
+                }
+
+                // Prevent duplicate join
+                if (room.guestUid === currentUser.uid) {
+                    alert('이미 이 방에 입장해 있습니다.');
+                    passwordModal.classList.remove('active');
+                    return;
+                }
 
                 if (room.hasPassword && room.password !== password) {
                     alert('잘못된 접속 코드입니다.');
