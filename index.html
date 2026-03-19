@@ -2468,8 +2468,9 @@
         // Initialize
         window.addEventListener('load', () => {
             loadingScreen.style.display = 'flex';
-            loginScreen.style.display = 'flex';
+            loginScreen.style.display = 'none';
             homeScreen.style.display = 'none';
+            roomScreen.style.display = 'none';
 
             auth.onAuthStateChanged((user) => {
                 if (user) {
