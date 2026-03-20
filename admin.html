@@ -772,6 +772,12 @@
         let pendingTeachersUnsubscribe = null;
         let approvedTeachersUnsubscribe = null;
 
+        // XSS Prevention
+        function escapeHtml(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         // Initialize
         firebase.auth().onAuthStateChanged(async (user) => {
             if (!user) {
@@ -849,15 +855,15 @@
 
                     tbody.innerHTML = teachers.map(teacher => `
                         <tr>
-                            <td><strong>${teacher.nickname || '(미설정)'}</strong></td>
-                            <td>${teacher.email}</td>
-                            <td>${teacher.school || '-'}</td>
-                            <td>${teacher.gradeClass || '-'}</td>
+                            <td><strong>${escapeHtml(teacher.nickname || '(미설정)')}</strong></td>
+                            <td>${escapeHtml(teacher.email)}</td>
+                            <td>${escapeHtml(teacher.school || '-')}</td>
+                            <td>${escapeHtml(teacher.gradeClass || '-')}</td>
                             <td class="timestamp">${formatDate(teacher.createdAt)}</td>
                             <td>
                                 <div class="actions">
-                                    <button class="btn-action btn-success" onclick="approveTeacher('${teacher.id}')">승인</button>
-                                    <button class="btn-action btn-danger" onclick="denyTeacher('${teacher.id}')">거부</button>
+                                    <button class="btn-action btn-success" onclick="approveTeacher('${escapeHtml(teacher.id)}')">승인</button>
+                                    <button class="btn-action btn-danger" onclick="denyTeacher('${escapeHtml(teacher.id)}')">거부</button>
                                 </div>
                             </td>
                         </tr>
@@ -889,16 +895,16 @@
 
                     tbody.innerHTML = teachers.map(teacher => `
                         <tr>
-                            <td><strong>${teacher.nickname || '(미설정)'}</strong></td>
-                            <td>${teacher.email}</td>
-                            <td>${teacher.school || '-'}</td>
-                            <td>${teacher.gradeClass || '-'}</td>
+                            <td><strong>${escapeHtml(teacher.nickname || '(미설정)')}</strong></td>
+                            <td>${escapeHtml(teacher.email)}</td>
+                            <td>${escapeHtml(teacher.school || '-')}</td>
+                            <td>${escapeHtml(teacher.gradeClass || '-')}</td>
                             <td><strong style="color: #a78bfa;">${teacher.points || 0}</strong></td>
                             <td>${teacher.gamesPlayed || 0}</td>
                             <td class="timestamp">${formatTime(teacher.lastLogin)}</td>
                             <td>
                                 <div class="actions">
-                                    <button class="btn-action btn-danger" onclick="revokeTeacher('${teacher.id}')">승인 취소</button>
+                                    <button class="btn-action btn-danger" onclick="revokeTeacher('${escapeHtml(teacher.id)}')">승인 취소</button>
                                 </div>
                             </td>
                         </tr>
@@ -974,11 +980,14 @@
                 );
             }
 
-            // Sort
+            // Sort (handle Firestore Timestamp objects for date fields)
             const sortBy = document.getElementById('sortBy').value;
             filtered.sort((a, b) => {
                 let aVal = a[sortBy] || 0;
                 let bVal = b[sortBy] || 0;
+                // Handle Firestore Timestamp objects
+                if (aVal && typeof aVal === 'object' && aVal.seconds) aVal = aVal.seconds;
+                if (bVal && typeof bVal === 'object' && bVal.seconds) bVal = bVal.seconds;
                 if (typeof aVal === 'string') {
                     return aVal.localeCompare(bVal);
                 }
@@ -992,8 +1001,8 @@
 
             tbody.innerHTML = filtered.map(user => `
                 <tr>
-                    <td><strong>${user.nickname || '(미설정)'}</strong></td>
-                    <td>${user.email}</td>
+                    <td><strong>${escapeHtml(user.nickname || '(미설정)')}</strong></td>
+                    <td>${escapeHtml(user.email)}</td>
                     <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
                     <td>${user.gamesPlayed || 0}</td>
                     <td>${user.wins || 0}</td>
@@ -1001,10 +1010,10 @@
                     <td class="timestamp">${formatDate(user.createdAt)}</td>
                     <td>
                         <div class="actions">
-                            <button class="btn-action btn-primary" onclick="openPointsModal('${user.id}', ${user.points || 0}, '${user.nickname}')">포인트</button>
-                            <button class="btn-action btn-secondary" onclick="openResetModal('${user.id}', '${user.nickname}')">초기화</button>
-                            <button class="btn-action ${user.isAdmin ? 'btn-danger' : 'btn-primary'}" onclick="toggleAdmin('${user.id}', ${user.isAdmin})">${user.isAdmin ? '해제' : '지정'}</button>
-                            <button class="btn-action btn-danger" onclick="openDeleteModal('${user.id}', '${user.nickname}')">강퇴</button>
+                            <button class="btn-action btn-primary" onclick="openPointsModal('${escapeHtml(user.id)}', ${user.points || 0}, '${escapeHtml(user.nickname)}')">포인트</button>
+                            <button class="btn-action btn-secondary" onclick="openResetModal('${escapeHtml(user.id)}', '${escapeHtml(user.nickname)}')">초기화</button>
+                            <button class="btn-action ${user.isAdmin ? 'btn-danger' : 'btn-primary'}" onclick="toggleAdmin('${escapeHtml(user.id)}', ${user.isAdmin})">${user.isAdmin ? '해제' : '지정'}</button>
+                            <button class="btn-action btn-danger" onclick="openDeleteModal('${escapeHtml(user.id)}', '${escapeHtml(user.nickname)}')">강퇴</button>
                         </div>
                     </td>
                 </tr>
@@ -1052,7 +1061,7 @@
                 tbody.innerHTML = ranked.map((user, idx) => `
                     <tr>
                         <td><strong style="color: #fbbf24;">#${idx + 1}</strong></td>
-                        <td>${user.nickname || user.email}</td>
+                        <td>${escapeHtml(user.nickname || user.email)}</td>
                         <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
                         <td>${user.gamesPlayed || 0}</td>
                         <td>${user.wins || 0}</td>
@@ -1069,7 +1078,11 @@
             const tbody = document.getElementById('accessBody');
             try {
                 const sorted = allUsers
-                    .sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+                    .sort((a, b) => {
+                        const aTs = a.lastLogin ? (a.lastLogin.seconds || a.lastLogin) : 0;
+                        const bTs = b.lastLogin ? (b.lastLogin.seconds || b.lastLogin) : 0;
+                        return bTs - aTs;
+                    });
 
                 if (sorted.length === 0) {
                     tbody.innerHTML = '<tr class="empty-state"><td colspan="5">기록이 없습니다</td></tr>';
@@ -1080,11 +1093,12 @@
                 today.setHours(0, 0, 0, 0);
 
                 tbody.innerHTML = sorted.map(user => {
-                    const isToday = user.lastLogin && new Date(user.lastLogin * 1000) >= today;
+                    const loginTs = user.lastLogin ? (user.lastLogin.seconds || user.lastLogin) : 0;
+                    const isToday = loginTs && new Date(loginTs * 1000) >= today;
                     return `
                         <tr ${isToday ? 'class="today-login"' : ''}>
-                            <td><strong>${user.nickname || '(미설정)'}</strong></td>
-                            <td>${user.email}</td>
+                            <td><strong>${escapeHtml(user.nickname || '(미설정)')}</strong></td>
+                            <td>${escapeHtml(user.email)}</td>
                             <td class="timestamp">${formatTime(user.lastLogin)}</td>
                             <td><strong style="color: #a78bfa;">${user.points || 0}</strong></td>
                             <td>${user.gamesPlayed || 0}</td>
@@ -1099,7 +1113,9 @@
 
         function formatTime(timestamp) {
             if (!timestamp) return '미접속';
-            const date = new Date(timestamp * 1000);
+            // Handle Firestore Timestamp objects and raw seconds
+            const ts = timestamp.seconds ? timestamp.seconds : timestamp;
+            const date = new Date(ts * 1000);
             const now = new Date();
             const diff = now - date;
 
@@ -1117,7 +1133,8 @@
 
         function formatDate(timestamp) {
             if (!timestamp) return '-';
-            const date = new Date(timestamp * 1000);
+            const ts = timestamp.seconds ? timestamp.seconds : timestamp;
+            const date = new Date(ts * 1000);
             return date.toLocaleDateString('ko-KR');
         }
 
@@ -1313,6 +1330,12 @@
                 event.target.classList.remove('show');
             }
         }
+
+        // Cleanup Firestore listeners on page close
+        window.addEventListener('beforeunload', () => {
+            if (pendingTeachersUnsubscribe) { pendingTeachersUnsubscribe(); pendingTeachersUnsubscribe = null; }
+            if (approvedTeachersUnsubscribe) { approvedTeachersUnsubscribe(); approvedTeachersUnsubscribe = null; }
+        });
     </script>
 </body>
 </html>
