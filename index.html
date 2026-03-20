@@ -3827,13 +3827,20 @@
             gameState.gameActive = false;
             clearRoomTTL();
 
-            // Cleanup battle room from Firestore (non-class rooms only)
+            // Cleanup battle room from Firestore
+            // 게임 종료 후(gameEnd 상태) 또는 게임 진행 중에만 방 삭제
+            // 대기 중(waiting)인 방은 삭제하지 않음 (다른 사람이 입장할 수 있도록)
             if (currentRoom) {
                 const roomId = currentRoom;
                 db.collection('rooms').doc(roomId).get().then(doc => {
-                    if (doc.exists && !doc.data().isClassRoom) {
-                        // Delete non-class battle rooms on exit
-                        db.collection('rooms').doc(roomId).delete().catch(() => {});
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.isClassRoom) return; // 학급 방은 절대 삭제 안 함
+                        // 게임이 끝났거나 진행 중이었으면 삭제
+                        if (data.status !== 'waiting') {
+                            db.collection('rooms').doc(roomId).delete().catch(() => {});
+                        }
+                        // waiting 상태인 방은 유지 (TTL이 5분 후 자동 삭제)
                     }
                 }).catch(() => {});
             }
