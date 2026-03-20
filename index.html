@@ -1822,6 +1822,8 @@
                     gameState.guestName = gs.name;
                     gameState.guestUid = gs.uid;
                     gameState.guestChar = gs.char;
+                    gameState.selectedChar = gs.char;
+                    selectedProfileChar = gs.char || '';
                     currentRoom = gs.classCode;
                     selectedOperations = gs.operations || ['+','-'];
                     // Restore guest view
@@ -1829,6 +1831,10 @@
                     loginScreen.style.display = 'none';
                     homeScreen.classList.add('active');
                     document.getElementById('userName').textContent = gs.name;
+                    // 캐릭터 아바타 복원
+                    if (gs.char) {
+                        document.getElementById('userAvatar').outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${gs.char}</div>`;
+                    }
                     document.getElementById('gameModeButtons').style.display = 'none';
                     // Reload class data
                     db.collection('rooms').doc(gs.classCode).get().then(doc => {
@@ -2534,6 +2540,17 @@
                         document.getElementById('userPoints').textContent = (typeof data.points === 'number') ? data.points : 0;
                         document.getElementById('userGames').textContent = data.gamesPlayed || 0;
                         document.getElementById('userWins').textContent = data.wins || 0;
+                        // 프로필 캐릭터 복원
+                        if (data.profileChar) {
+                            selectedProfileChar = data.profileChar;
+                            gameState.selectedChar = data.profileChar;
+                            updateAvatarDisplay(data.profileChar);
+                        } else if (currentUser.photoURL) {
+                            const avatarEl = document.getElementById('userAvatar');
+                            if (avatarEl && avatarEl.tagName === 'IMG') {
+                                avatarEl.src = currentUser.photoURL;
+                            }
+                        }
                     }
                 } else if (gameState.guestName) {
                     // Guest user - load from class scores
@@ -2552,6 +2569,14 @@
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        // 아바타 표시 업데이트 헬퍼
+        function updateAvatarDisplay(charEmoji) {
+            const avatarEl = document.getElementById('userAvatar');
+            if (avatarEl && charEmoji) {
+                avatarEl.outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${charEmoji}</div>`;
             }
         }
 
@@ -2607,13 +2632,23 @@
                 if (gameState.guestName) gameState.guestName = newName;
                 if (selectedProfileChar) {
                     gameState.guestChar = selectedProfileChar;
+                    gameState.selectedChar = selectedProfileChar;
                     // Replace avatar element (could be img or div)
-                    const avatarEl = document.getElementById('userAvatar');
-                    if (avatarEl) {
-                        avatarEl.outerHTML = `<div id="userAvatar" onclick="showProfileModal()" style="width:40px;height:40px;border-radius:50%;background:#EDE7FF;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px solid rgba(102,126,234,0.3);">${selectedProfileChar}</div>`;
-                    }
+                    updateAvatarDisplay(selectedProfileChar);
                 }
                 document.getElementById('userName').textContent = newName;
+
+                // sessionStorage 업데이트 (게스트 새로고침 시 캐릭터 유지)
+                const existingSession = sessionStorage.getItem('guestSession');
+                if (existingSession) {
+                    try {
+                        const gs = JSON.parse(existingSession);
+                        gs.name = newName;
+                        if (selectedProfileChar) gs.char = selectedProfileChar;
+                        sessionStorage.setItem('guestSession', JSON.stringify(gs));
+                    } catch(e) {}
+                }
+
                 profileModal.classList.remove('active');
                 alert('프로필이 저장되었습니다!');
             } catch (error) {
