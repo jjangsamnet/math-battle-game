@@ -723,40 +723,94 @@
             display: flex;
         }
 
+        /* ═══ GAME SCREEN ═══ */
+        #gameScreen {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            border-radius: 20px !important;
+            position: relative;
+            overflow: hidden;
+        }
+        #gameScreen::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(102,126,234,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(118,75,162,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
         .game-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            align-items: stretch;
+            padding: 12px 10px;
+            position: relative;
+            z-index: 1;
         }
 
         .player-info {
             text-align: center;
             flex: 1;
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 10px 6px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
+        .player-info:first-child { border-left: 3px solid #667eea; }
+        .player-info:last-child { border-right: 3px solid #ff6b6b; }
 
         .player-name-game {
-            font-size: 12px;
-            color: #666;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
         .player-score {
-            font-size: 20px;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .player-info:last-child .player-score {
+            background: linear-gradient(135deg, #ff6b6b, #ffa07a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .player-health {
-            font-size: 14px;
+            font-size: 12px;
             color: #ff6b6b;
+            margin-top: 2px;
         }
 
         .game-timer {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 32px;
+            font-weight: 900;
+            color: white;
+            min-width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 20px rgba(102,126,234,0.8);
+            position: relative;
+        }
+        .game-timer::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(102,126,234,0.3);
+            animation: timerPulse 2s ease-in-out infinite;
+        }
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(0.9); opacity: 0.5; }
+            50% { transform: scale(1.15); opacity: 1; }
         }
 
         .question-area {
@@ -765,163 +819,210 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 12px;
-            text-align: center;
+            gap: 16px;
+            padding: 24px 16px;
+            position: relative;
+            z-index: 1;
         }
 
         .question-text {
-            font-size: 32px;
-            font-weight: bold;
-            color: #333;
+            font-size: 48px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 20px rgba(102,126,234,0.5);
+            letter-spacing: 4px;
+            padding: 20px 36px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            min-width: 200px;
         }
 
         .answer-input {
-            flex: 1;
-            max-width: 200px;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
+            width: 80%;
+            max-width: 240px;
+            padding: 16px 20px;
+            font-size: 28px;
+            font-weight: 900;
+            border: 3px solid rgba(102,126,234,0.5);
+            border-radius: 16px;
             text-align: center;
             outline: none;
+            background: rgba(255,255,255,0.95);
+            color: #1a1a2e;
+            transition: all 0.3s;
+            letter-spacing: 2px;
         }
 
         .answer-input:focus {
-            border-color: #764ba2;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            border-color: #a78bfa;
+            box-shadow: 0 0 24px rgba(102,126,234,0.4), 0 0 48px rgba(118,75,162,0.2);
+            transform: scale(1.03);
         }
+
+        .answer-input::placeholder {
+            font-size: 14px;
+            font-weight: 600;
+            color: #aaa;
+            letter-spacing: 0;
+        }
+
+        .game-btn-row {
+            display: flex;
+            gap: 10px;
+            width: 80%;
+            max-width: 280px;
+        }
+
+        .answer-submit-btn {
+            flex: 1;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,200,83,0.4);
+        }
+        .answer-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,200,83,0.5); }
+        .answer-submit-btn:active { transform: scale(0.95); }
 
         .surrender-btn {
-            padding: 12px 20px;
-            background: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 14px 16px;
+            background: rgba(255,152,0,0.2);
+            color: #ffb74d;
+            border: 2px solid rgba(255,152,0,0.3);
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 800;
             cursor: pointer;
             transition: all 0.3s;
         }
-
         .surrender-btn:hover {
-            background: #f57c00;
+            background: rgba(255,152,0,0.35);
+            border-color: #ff9800;
         }
 
-        /* Answer Submit Button */
-        .answer-submit-btn {
-            padding: 12px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-height: 48px;
-            font-size: 16px;
-            flex: 1;
-            margin-left: 10px;
+        /* ═══ CORRECT/WRONG FLASH ═══ */
+        @keyframes correctFlash {
+            0% { box-shadow: 0 0 0 0 rgba(0,200,83,0.7); }
+            50% { box-shadow: 0 0 30px 10px rgba(0,200,83,0.3); }
+            100% { box-shadow: none; }
+        }
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .answer-correct { animation: correctFlash 0.5s ease-out; border-color: #00c853 !important; }
+        .answer-wrong { animation: wrongShake 0.4s ease-out; border-color: #ff5252 !important; }
+
+        /* ═══ BOSS HEALTH ═══ */
+        #bossHealthContainer {
+            position: relative;
+            z-index: 1;
+        }
+        .boss-info {
+            font-size: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255,87,34,0.3);
         }
 
-        .answer-submit-btn:hover {
-            background: #45a049;
-        }
-
-        .answer-submit-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Game End Screen */
+        /* ═══ GAME END SCREEN ═══ */
         #gameEnd {
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            background: white;
+            padding: 24px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
             flex: 1;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
-
-        #gameEnd.active {
-            display: flex;
+        #gameEnd::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(255,215,0,0.1) 0%, transparent 60%);
+            pointer-events: none;
         }
+        #gameEnd.active { display: flex; }
 
         .result-emoji {
             font-size: 80px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 4px 20px rgba(255,215,0,0.4));
+            animation: resultBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes resultBounce {
+            0% { transform: scale(0) rotate(-20deg); }
+            100% { transform: scale(1) rotate(0); }
         }
 
         .game-result {
             font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 20px;
+            font-weight: 900;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
         }
-
-        .game-result.win {
-            color: #4CAF50;
-        }
-
-        .game-result.lose {
-            color: #ff6b6b;
-        }
-
-        .game-result.draw {
-            color: #ff9800;
-        }
+        .game-result.win { color: #00e676; text-shadow: 0 0 20px rgba(0,230,118,0.4); }
+        .game-result.lose { color: #ff5252; text-shadow: 0 0 20px rgba(255,82,82,0.4); }
+        .game-result.draw { color: #ffab40; text-shadow: 0 0 20px rgba(255,171,64,0.4); }
 
         .final-scores {
             display: flex;
             justify-content: space-around;
             width: 100%;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 8px;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1;
         }
-
-        .score-section {
-            text-align: center;
-        }
-
-        .score-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .score-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #667eea;
-        }
+        .score-section { text-align: center; }
+        .score-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 4px; font-weight: 600; }
+        .score-value { font-size: 32px; font-weight: 900; color: #a78bfa; }
 
         .points-earned {
-            font-size: 18px;
-            color: #4CAF50;
+            font-size: 20px;
+            font-weight: 900;
             margin-bottom: 20px;
-            font-weight: bold;
+            padding: 8px 24px;
+            border-radius: 30px;
+            position: relative;
+            z-index: 1;
         }
+        .points-earned.positive { color: #00e676; background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); }
+        .points-earned.negative { color: #ff5252; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); }
 
         .back-home-btn {
-            padding: 12px 30px;
-            background: #667eea;
+            padding: 14px 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 14px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
             transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.4);
+            position: relative;
+            z-index: 1;
         }
-
-        .back-home-btn:hover {
-            background: #764ba2;
-        }
+        .back-home-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(102,126,234,0.6); }
 
         /* Modal */
         .modal {
@@ -1416,27 +1517,31 @@
         <div id="gameScreen">
             <div class="game-header">
                 <div class="player-info">
+                    <div style="font-size:24px;margin-bottom:2px;" id="player1CharGame">⚔️</div>
                     <div class="player-name-game" id="player1NameGame">플레이어 1</div>
                     <div class="player-score" id="player1Score">0</div>
                     <div class="player-health" id="player1Health">❤️×10</div>
                 </div>
                 <div class="game-timer" id="gameTimer">50</div>
                 <div class="player-info">
+                    <div style="font-size:24px;margin-bottom:2px;" id="player2CharGame">🧙</div>
                     <div class="player-name-game" id="player2NameGame">플레이어 2</div>
                     <div class="player-score" id="player2Score">0</div>
                     <div class="player-health" id="player2Health">❤️×10</div>
                 </div>
             </div>
 
-            <div id="bossHealthContainer" style="display: none; text-align: center; margin-bottom: 15px;">
+            <div id="bossHealthContainer" style="display:none;text-align:center;padding:0 16px;position:relative;z-index:1;">
                 <div class="boss-info" id="bossHealth">🐉🐉🐉🐉🐉</div>
             </div>
 
             <div class="question-area">
                 <div class="question-text" id="questionText">7 - 3</div>
-                <input type="number" class="answer-input" id="answerInput" placeholder="답을 입력하세요">
-                <button class="answer-submit-btn" id="answerSubmitBtn">제출</button>
-                <button class="surrender-btn" id="surrenderBtn">항복</button>
+                <input type="number" class="answer-input" id="answerInput" placeholder="답을 입력하세요" inputmode="numeric">
+                <div class="game-btn-row">
+                    <button class="answer-submit-btn" id="answerSubmitBtn">제출</button>
+                    <button class="surrender-btn" id="surrenderBtn">🏳️</button>
+                </div>
             </div>
         </div>
 
@@ -3277,6 +3382,11 @@
             document.getElementById('player2NameGame').textContent = oppName;
             document.getElementById('player1Score').textContent = '0';
             document.getElementById('player2Score').textContent = '0';
+            // 게임 화면에 캐릭터 표시
+            const myChar = gameState.selectedChar || gameState.guestChar || '⚔️';
+            const oppChar = gameState.opponentChar || '🧙';
+            document.getElementById('player1CharGame').textContent = myChar;
+            document.getElementById('player2CharGame').textContent = oppChar;
 
             updateHealthDisplay();
 
@@ -3597,6 +3707,9 @@
             gameState.myScore++;
             gameState.myStreak++;
             showCorrectEffect();
+            // 입력 필드 시각 피드백
+            answerInput.classList.add('answer-correct');
+            setTimeout(() => answerInput.classList.remove('answer-correct'), 500);
 
             // Streak bonus: 3 consecutive → +1 life
             if (gameState.myStreak > 0 && gameState.myStreak % 3 === 0) {
@@ -3637,6 +3750,9 @@
         // Incorrect Answer
         function handleIncorrectAnswer() {
             showIncorrectEffect();
+            // 입력 필드 시각 피드백
+            answerInput.classList.add('answer-wrong');
+            setTimeout(() => answerInput.classList.remove('answer-wrong'), 400);
             gameState.myStreak = 0;
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
@@ -3800,7 +3916,9 @@
             document.getElementById('gameResult').className = `game-result ${result === 'win' ? 'win' : result === 'lose' ? 'lose' : 'draw'}`;
             document.getElementById('myFinalScore').textContent = gameState.myScore;
             document.getElementById('opponentFinalScore').textContent = gameState.opponentScore;
-            document.getElementById('pointsEarned').textContent = '+' + pointsEarned;
+            const peEl = document.getElementById('pointsEarned');
+            peEl.textContent = '+' + pointsEarned + ' 포인트';
+            peEl.className = 'points-earned ' + (result === 'win' ? 'positive' : result === 'lose' ? 'negative' : 'positive');
 
             // Only send GAME_END if I initiated the end (not received from peer)
             if (!fromPeer) {
