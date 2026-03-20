@@ -3796,28 +3796,139 @@
 
         // ═══ Visual + Sound Effects ═══
         function showCorrectEffect() {
-            // Sound: 딩동댕!
-            playSound(523, 150); setTimeout(() => playSound(659, 150), 150); setTimeout(() => playSound(784, 200), 300);
-            // Visual: 폭죽 effect
-            const fx = document.createElement('div');
-            fx.innerHTML = '🎉 정답! 🎊';
-            fx.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;color:#4CAF50;z-index:9999;pointer-events:none;animation:popFade 1s ease forwards;text-shadow:0 4px 20px rgba(76,175,80,0.5);';
-            document.body.appendChild(fx);
-            // Sparkles
-            for (let i = 0; i < 8; i++) {
-                const sp = document.createElement('div');
-                const angle = (i / 8) * Math.PI * 2;
-                const emojis = ['✨','🌟','⭐','💫','🎆','🎇','🎉','🎊'];
-                sp.textContent = emojis[i];
-                sp.style.cssText = `position:fixed;top:40%;left:50%;font-size:28px;z-index:9999;pointer-events:none;transition:all 0.8s ease;opacity:1;`;
-                document.body.appendChild(sp);
+            // ═══ 3초 축하 세레모니 ═══
+
+            // 1) 오버레이 컨테이너
+            const overlay = document.createElement('div');
+            overlay.id = 'celebrationOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden;';
+            document.body.appendChild(overlay);
+
+            // 2) 화면 전체 플래시
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:absolute;inset:0;background:radial-gradient(circle,rgba(0,200,83,0.4),transparent 70%);animation:celebFlash 0.6s ease-out forwards;';
+            overlay.appendChild(flash);
+
+            // 3) 중앙 텍스트 (바운스 애니메이션)
+            const messages = ['🎉 정답! 🎊', '✨ 대단해! ✨', '🔥 멋져요! 🔥', '⭐ 천재! ⭐', '💪 최고! 💪', '🏆 완벽! 🏆'];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            const textEl = document.createElement('div');
+            textEl.innerHTML = msg;
+            textEl.style.cssText = 'position:absolute;top:35%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:44px;font-weight:900;color:#fff;z-index:9999;text-shadow:0 0 30px rgba(0,200,83,0.8),0 0 60px rgba(102,126,234,0.5);animation:celebBounce 3s ease forwards;white-space:nowrap;';
+            overlay.appendChild(textEl);
+
+            // 4) 연속 폭죽 파티클 (3파 발사)
+            function launchFirework(delay) {
                 setTimeout(() => {
-                    sp.style.transform = `translate(${Math.cos(angle)*100}px, ${Math.sin(angle)*100}px)`;
-                    sp.style.opacity = '0';
-                }, 50);
-                setTimeout(() => sp.remove(), 900);
+                    const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6ec7','#a78bfa','#00e676','#ff9800'];
+                    const cx = 20 + Math.random() * 60; // 화면 20~80% 위치
+                    const cy = 25 + Math.random() * 30; // 화면 25~55% 위치
+                    for (let j = 0; j < 14; j++) {
+                        const p = document.createElement('div');
+                        const angle = (j / 14) * Math.PI * 2 + Math.random() * 0.3;
+                        const dist = 60 + Math.random() * 80;
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        const size = 6 + Math.random() * 8;
+                        p.style.cssText = `position:absolute;top:${cy}%;left:${cx}%;width:${size}px;height:${size}px;border-radius:50%;background:${color};box-shadow:0 0 ${size*2}px ${color};z-index:9999;pointer-events:none;opacity:1;transition:all 0.8s cubic-bezier(0.2,0.8,0.3,1);`;
+                        overlay.appendChild(p);
+                        setTimeout(() => {
+                            p.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+                            p.style.opacity = '0';
+                        }, 30);
+                        setTimeout(() => p.remove(), 900);
+                    }
+                }, delay);
             }
-            setTimeout(() => fx.remove(), 1000);
+            launchFirework(0);
+            launchFirework(600);
+            launchFirework(1300);
+
+            // 5) 떨어지는 이모지 (별비)
+            const starEmojis = ['⭐','🌟','✨','💫','🎉','🎊','🎆','🎇','💥','🌈'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.textContent = starEmojis[Math.floor(Math.random() * starEmojis.length)];
+                    const leftPos = Math.random() * 100;
+                    const dur = 1.5 + Math.random() * 1.5;
+                    const size = 16 + Math.random() * 20;
+                    star.style.cssText = `position:absolute;top:-30px;left:${leftPos}%;font-size:${size}px;z-index:9999;pointer-events:none;animation:celebFall ${dur}s ease-in forwards;opacity:0.9;`;
+                    overlay.appendChild(star);
+                    setTimeout(() => star.remove(), dur * 1000 + 100);
+                }, Math.random() * 2000);
+            }
+
+            // 6) 사운드: 팡파레 (도레미파솔 상승음 → 화음)
+            playCelebrationSound();
+
+            // 7) 게임 화면 테두리 반짝임
+            const gameScreen = document.getElementById('gameScreen');
+            if (gameScreen) {
+                gameScreen.style.boxShadow = '0 0 40px rgba(0,200,83,0.6), inset 0 0 40px rgba(0,200,83,0.15)';
+                setTimeout(() => {
+                    gameScreen.style.boxShadow = '0 0 60px rgba(102,126,234,0.5), inset 0 0 30px rgba(102,126,234,0.1)';
+                }, 800);
+                setTimeout(() => {
+                    gameScreen.style.boxShadow = '';
+                }, 2500);
+            }
+
+            // 8) 3초 후 전체 정리
+            setTimeout(() => overlay.remove(), 3200);
+        }
+
+        function playCelebrationSound() {
+            try {
+                const ctx = getSharedAudioCtx();
+                // 팡파레: 도→미→솔→높은도 (빠르게)
+                const notes = [523, 659, 784, 1047];
+                notes.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = freq;
+                        osc.type = i < 3 ? 'triangle' : 'sine';
+                        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.3);
+                    }, i * 120);
+                });
+                // 마무리 화음 (도+미+솔 동시)
+                setTimeout(() => {
+                    [523, 659, 784].forEach(freq => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = freq;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + 0.8);
+                    });
+                }, 550);
+                // 2번째 팡파레 (1초 후, 더 높은 음)
+                setTimeout(() => {
+                    [784, 988, 1175, 1568].forEach((freq, i) => {
+                        setTimeout(() => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.frequency.value = freq;
+                            osc.type = 'triangle';
+                            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                            osc.start(ctx.currentTime);
+                            osc.stop(ctx.currentTime + 0.25);
+                        }, i * 100);
+                    });
+                }, 1200);
+            } catch(e) {}
         }
 
         function showIncorrectEffect() {
@@ -3848,6 +3959,9 @@
         effectStyle.textContent = `
             @keyframes popFade { 0%{transform:translate(-50%,-50%) scale(0.3);opacity:0} 30%{transform:translate(-50%,-50%) scale(1.2);opacity:1} 60%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(1);opacity:0} }
             @keyframes shakeBody { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+            @keyframes celebFlash { 0%{opacity:1} 100%{opacity:0} }
+            @keyframes celebBounce { 0%{transform:translate(-50%,-50%) scale(0);opacity:0} 8%{transform:translate(-50%,-50%) scale(1.3);opacity:1} 15%{transform:translate(-50%,-50%) scale(0.95);opacity:1} 20%{transform:translate(-50%,-50%) scale(1.05);opacity:1} 25%{transform:translate(-50%,-50%) scale(1);opacity:1} 80%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(0.8);opacity:0} }
+            @keyframes celebFall { 0%{transform:translateY(0) rotate(0deg);opacity:0.9} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
         `;
         document.head.appendChild(effectStyle);
 
