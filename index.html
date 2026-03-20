@@ -819,92 +819,156 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 16px;
-            padding: 24px 16px;
+            gap: 10px;
+            padding: 10px 12px 12px;
             position: relative;
             z-index: 1;
         }
 
         .question-text {
-            font-size: 48px;
+            font-size: 42px;
             font-weight: 900;
             color: white;
             text-shadow: 0 2px 20px rgba(102,126,234,0.5);
             letter-spacing: 4px;
-            padding: 20px 36px;
+            padding: 12px 30px;
             background: rgba(255,255,255,0.06);
-            border-radius: 20px;
+            border-radius: 16px;
             border: 2px solid rgba(255,255,255,0.1);
-            min-width: 200px;
+            min-width: 180px;
+        }
+
+        .answer-display-row {
+            display: flex;
+            gap: 8px;
+            width: 92%;
+            max-width: 320px;
+            align-items: stretch;
         }
 
         .answer-input {
-            width: 80%;
-            max-width: 240px;
-            padding: 16px 20px;
+            flex: 1;
+            padding: 10px 14px;
             font-size: 28px;
             font-weight: 900;
             border: 3px solid rgba(102,126,234,0.5);
-            border-radius: 16px;
+            border-radius: 14px;
             text-align: center;
             outline: none;
             background: rgba(255,255,255,0.95);
             color: #1a1a2e;
             transition: all 0.3s;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            min-width: 0;
+            -moz-appearance: textfield;
         }
+        .answer-input::-webkit-outer-spin-button,
+        .answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
         .answer-input:focus {
             border-color: #a78bfa;
-            box-shadow: 0 0 24px rgba(102,126,234,0.4), 0 0 48px rgba(118,75,162,0.2);
-            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(102,126,234,0.4);
         }
 
         .answer-input::placeholder {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #aaa;
             letter-spacing: 0;
         }
 
-        .game-btn-row {
-            display: flex;
-            gap: 10px;
-            width: 80%;
-            max-width: 280px;
-        }
-
         .answer-submit-btn {
-            flex: 1;
-            padding: 14px 20px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, #00c853, #00e676);
             color: white;
             border: none;
             border-radius: 14px;
-            font-size: 18px;
+            font-size: 24px;
             font-weight: 900;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
             box-shadow: 0 4px 15px rgba(0,200,83,0.4);
+            min-width: 60px;
         }
-        .answer-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,200,83,0.5); }
-        .answer-submit-btn:active { transform: scale(0.95); }
+        .answer-submit-btn:active { transform: scale(0.9); background: linear-gradient(135deg, #00a844, #00c853); }
+
+        /* ═══ NUMBER PAD ═══ */
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            width: 92%;
+            max-width: 320px;
+        }
+
+        .numpad-btn {
+            padding: 14px 0;
+            font-size: 24px;
+            font-weight: 800;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .numpad-btn.num {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .numpad-btn.num:active {
+            background: rgba(102,126,234,0.5);
+            transform: scale(0.93);
+        }
+
+        .numpad-btn.special.minus {
+            background: rgba(102,126,234,0.25);
+            color: #a78bfa;
+            border: 1px solid rgba(102,126,234,0.3);
+            font-size: 28px;
+        }
+        .numpad-btn.special.minus:active {
+            background: rgba(102,126,234,0.5);
+            transform: scale(0.93);
+        }
+
+        .numpad-btn.special.del {
+            background: rgba(255,107,107,0.2);
+            color: #ff8a8a;
+            border: 1px solid rgba(255,107,107,0.25);
+            font-size: 22px;
+        }
+        .numpad-btn.special.del:active {
+            background: rgba(255,107,107,0.45);
+            transform: scale(0.93);
+        }
+
+        .game-action-row {
+            width: 92%;
+            max-width: 320px;
+            display: flex;
+            justify-content: center;
+            margin-top: 2px;
+        }
 
         .surrender-btn {
-            padding: 14px 16px;
-            background: rgba(255,152,0,0.2);
-            color: #ffb74d;
-            border: 2px solid rgba(255,152,0,0.3);
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: 800;
+            padding: 8px 24px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
         }
-        .surrender-btn:hover {
-            background: rgba(255,152,0,0.35);
-            border-color: #ff9800;
+        .surrender-btn:active {
+            background: rgba(255,152,0,0.3);
+            color: #ffb74d;
         }
 
         /* ═══ CORRECT/WRONG FLASH ═══ */
@@ -1537,10 +1601,26 @@
 
             <div class="question-area">
                 <div class="question-text" id="questionText">7 - 3</div>
-                <input type="number" class="answer-input" id="answerInput" placeholder="답을 입력하세요" inputmode="numeric">
-                <div class="game-btn-row">
-                    <button class="answer-submit-btn" id="answerSubmitBtn">제출</button>
-                    <button class="surrender-btn" id="surrenderBtn">🏳️</button>
+                <div class="answer-display-row">
+                    <input type="text" class="answer-input" id="answerInput" placeholder="답을 입력하세요" inputmode="none">
+                    <button class="answer-submit-btn" id="answerSubmitBtn">⚡</button>
+                </div>
+                <div class="numpad-grid" id="numpadGrid">
+                    <button class="numpad-btn num" onclick="numpadInput('1')">1</button>
+                    <button class="numpad-btn num" onclick="numpadInput('2')">2</button>
+                    <button class="numpad-btn num" onclick="numpadInput('3')">3</button>
+                    <button class="numpad-btn num" onclick="numpadInput('4')">4</button>
+                    <button class="numpad-btn num" onclick="numpadInput('5')">5</button>
+                    <button class="numpad-btn num" onclick="numpadInput('6')">6</button>
+                    <button class="numpad-btn num" onclick="numpadInput('7')">7</button>
+                    <button class="numpad-btn num" onclick="numpadInput('8')">8</button>
+                    <button class="numpad-btn num" onclick="numpadInput('9')">9</button>
+                    <button class="numpad-btn special minus" onclick="numpadInput('-')">−</button>
+                    <button class="numpad-btn num" onclick="numpadInput('0')">0</button>
+                    <button class="numpad-btn special del" onclick="numpadDelete()">⌫</button>
+                </div>
+                <div class="game-action-row">
+                    <button class="surrender-btn" id="surrenderBtn">🏳️ 항복</button>
                 </div>
             </div>
         </div>
@@ -3639,13 +3719,52 @@
             answerInput.focus();
         }
 
-        // Answer Input
+        // ═══ 숫자패드 함수 ═══
+        function numpadInput(char) {
+            if (!gameState.gameActive) return;
+            const input = document.getElementById('answerInput');
+            if (char === '-') {
+                // 마이너스는 맨 앞에만 토글
+                if (input.value.startsWith('-')) {
+                    input.value = input.value.slice(1);
+                } else {
+                    input.value = '-' + input.value;
+                }
+            } else {
+                // 숫자 추가 (최대 6자리)
+                const currentVal = input.value;
+                if (currentVal.replace('-', '').length >= 6) return;
+                input.value = currentVal + char;
+            }
+            // 입력 시 살짝 반짝임
+            input.style.borderColor = '#a78bfa';
+            setTimeout(() => { input.style.borderColor = 'rgba(102,126,234,0.5)'; }, 150);
+        }
+
+        function numpadDelete() {
+            const input = document.getElementById('answerInput');
+            if (input.value.length > 0) {
+                input.value = input.value.slice(0, -1);
+            }
+        }
+
+        function numpadSubmit() {
+            const answerValue = answerInput.value.trim();
+            if (answerValue === '' || answerValue === '-') return;
+            checkAnswer(parseInt(answerValue));
+        }
+
+        // Answer Input (키보드 지원 유지)
         answerInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const answerValue = answerInput.value.trim();
-                if (answerValue !== '') {
-                    checkAnswer(parseInt(answerValue));
-                }
+                numpadSubmit();
+            }
+        });
+        // 키보드 직접 입력도 허용 (readonly 해제 가능)
+        answerInput.addEventListener('keydown', (e) => {
+            const allowed = ['0','1','2','3','4','5','6','7','8','9','-','Backspace','Delete','Enter','ArrowLeft','ArrowRight'];
+            if (!allowed.includes(e.key)) {
+                e.preventDefault();
             }
         });
 
@@ -3653,12 +3772,7 @@
         const answerSubmitBtn = document.getElementById('answerSubmitBtn');
         if (answerSubmitBtn) {
             answerSubmitBtn.addEventListener('click', () => {
-                const answerValue = answerInput.value.trim();
-                if (answerValue === '') {
-                    alert('답을 입력하세요');
-                    return;
-                }
-                checkAnswer(parseInt(answerValue));
+                numpadSubmit();
             });
         }
 
