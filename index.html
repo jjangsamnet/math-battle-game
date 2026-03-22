@@ -3481,6 +3481,7 @@
             gameState.opponentHealth = 10;
             gameState.myStreak = 0;
             gameState.difficulty = 1;
+            gameState.myCorrectInLevel = 0; // 난이도 상승 카운터
             gameState.bossHealth = 5;
 
             if (gameState.mode === 'boss') {
@@ -3565,12 +3566,8 @@
             } else if (data.type === 'INCORRECT') {
                 handleOpponentIncorrect();
             } else if (data.type === 'SYNC_QUESTION') {
-                // Sync question from peer to ensure both see same problem
-                if (data.question) {
-                    gameState.currentQuestion = data.question;
-                    questionText.textContent = data.question.question;
-                    answerInput.value = '';
-                }
+                // v10.9: 각자 독립 문제 — 상대 문제 무시 (하위 호환용 유지)
+                // 이전 버전 클라이언트가 보낸 SYNC_QUESTION은 무시
             } else if (data.type === 'GAME_END') {
                 // Opponent sent GAME_END - reverse the result for me
                 const myResult = data.result === 'win' ? 'lose' : data.result === 'lose' ? 'win' : 'draw';
@@ -3974,6 +3971,7 @@
         function handleCorrectAnswer() {
             gameState.myScore++;
             gameState.myStreak++;
+            gameState.myCorrectInLevel = (gameState.myCorrectInLevel || 0) + 1;
             showCorrectEffect();
             // 입력 필드 시각 피드백
             answerInput.classList.add('answer-correct');
@@ -3985,8 +3983,12 @@
                 playSound(1600, 150);
             }
 
-            // Difficulty increase per 5 correct
-            gameState.difficulty = Math.min(8, 1 + Math.floor(gameState.myScore / 5));
+            // ═══ 개인별 적응형 난이도 ═══
+            // 5문제 연속 정답 시 난이도 상승, 오답 시 난이도 유지
+            if (gameState.myCorrectInLevel >= 5) {
+                gameState.difficulty = Math.min(8, (gameState.difficulty || 1) + 1);
+                gameState.myCorrectInLevel = 0; // 카운터 리셋
+            }
 
             // Opponent loses 1 life
             if (gameState.mode === 'survival') {
@@ -4008,10 +4010,9 @@
                 return;
             }
 
-            sendPeerMessage({ type: 'CORRECT', nextQuestion: null });
-            generateQuestion();
-            // Share current question with peer for sync
-            sendPeerMessage({ type: 'SYNC_QUESTION', question: gameState.currentQuestion });
+            // ═══ 각자 독립 문제: 상대에게 정답 알림만 전송 (문제 동기화 X) ═══
+            sendPeerMessage({ type: 'CORRECT' });
+            generateQuestion(); // 내 난이도에 맞는 새 문제
             startQuestionTimer();
         }
 
@@ -4022,6 +4023,7 @@
             answerInput.classList.add('answer-wrong');
             setTimeout(() => answerInput.classList.remove('answer-wrong'), 400);
             gameState.myStreak = 0;
+            gameState.myCorrectInLevel = 0; // 오답 시 난이도 상승 카운터 리셋 (난이도 유지)
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
 
@@ -4115,6 +4117,7 @@
             if (!gameState.gameActive) return; // Prevent double timeout
             playSound(300, 200);
             gameState.myStreak = 0;
+            gameState.myCorrectInLevel = 0; // 타임아웃 시 난이도 카운터 리셋
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
 
@@ -4125,9 +4128,7 @@
                 return;
             }
 
-            generateQuestion();
-            // Share question with peer for sync
-            sendPeerMessage({ type: 'SYNC_QUESTION', question: gameState.currentQuestion });
+            generateQuestion(); // 내 난이도에 맞는 독립 문제
             startQuestionTimer();
         }
 
