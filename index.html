@@ -3931,6 +3931,39 @@
             } catch(e) {}
         }
 
+        function showLifeBonusMessage() {
+            // ═══ 생명 +1 축하 메시지 ═══
+            const msg = document.createElement('div');
+            msg.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9997;pointer-events:none;display:flex;align-items:center;justify-content:center;';
+
+            const inner = document.createElement('div');
+            inner.innerHTML = '❤️ 생명 +1! ❤️<br><span style="font-size:20px;color:#FFD54F;">🔥 3연속 정답 보너스!</span>';
+            inner.style.cssText = 'background:linear-gradient(135deg,rgba(233,30,99,0.95),rgba(156,39,176,0.95));color:#fff;font-size:32px;font-weight:900;padding:24px 40px;border-radius:20px;text-align:center;box-shadow:0 8px 40px rgba(233,30,99,0.5),0 0 60px rgba(233,30,99,0.3);animation:lifeBonusIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;';
+            msg.appendChild(inner);
+            document.body.appendChild(msg);
+
+            // 하트 파티클
+            for (let i = 0; i < 8; i++) {
+                const heart = document.createElement('div');
+                heart.textContent = ['❤️','💖','💗','💕'][Math.floor(Math.random()*4)];
+                const x = 30 + Math.random() * 40;
+                const delay = Math.random() * 0.3;
+                heart.style.cssText = `position:fixed;top:50%;left:${x}%;font-size:${24+Math.random()*20}px;z-index:9997;pointer-events:none;opacity:0;animation:heartFloat 1.2s ${delay}s ease-out forwards;`;
+                msg.appendChild(heart);
+            }
+
+            // 사운드: 짧은 팡파레
+            setTimeout(() => playSound(1200, 100), 0);
+            setTimeout(() => playSound(1400, 100), 100);
+            setTimeout(() => playSound(1800, 150), 200);
+
+            // 1.5초 후 페이드아웃
+            setTimeout(() => {
+                inner.style.animation = 'lifeBonusOut 0.4s ease forwards';
+            }, 1300);
+            setTimeout(() => msg.remove(), 1700);
+        }
+
         function showIncorrectEffect() {
             // Sound: 땡!
             playSound(200, 300); setTimeout(() => playSound(150, 300), 200);
@@ -3959,6 +3992,9 @@
         effectStyle.textContent = `
             @keyframes popFade { 0%{transform:translate(-50%,-50%) scale(0.3);opacity:0} 30%{transform:translate(-50%,-50%) scale(1.2);opacity:1} 60%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(1);opacity:0} }
             @keyframes shakeBody { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+            @keyframes lifeBonusIn { 0%{transform:scale(0.3);opacity:0} 100%{transform:scale(1);opacity:1} }
+            @keyframes lifeBonusOut { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0.5);opacity:0} }
+            @keyframes heartFloat { 0%{transform:translateY(0) scale(0);opacity:0} 20%{opacity:1;transform:translateY(-20px) scale(1)} 100%{transform:translateY(-120px) scale(0.5);opacity:0} }
             @keyframes celebOverlayIn { 0%{opacity:0} 100%{opacity:1} }
             @keyframes celebOverlayOut { 0%{opacity:1} 100%{opacity:0} }
             @keyframes celebFlash { 0%{opacity:1} 100%{opacity:0} }
@@ -3981,6 +4017,7 @@
             if (gameState.myStreak > 0 && gameState.myStreak % 3 === 0) {
                 gameState.myHealth++;
                 playSound(1600, 150);
+                showLifeBonusMessage();
             }
 
             // ═══ 개인별 적응형 난이도 ═══
