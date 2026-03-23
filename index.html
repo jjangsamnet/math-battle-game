@@ -1378,7 +1378,7 @@
         <div id="guestLoginScreen">
             <div class="guest-login-form">
                 <h2 style="text-align: center; margin-bottom: 30px; color: white;">학생 간편 입장</h2>
-                <input type="text" id="classCodeInput" placeholder="6자리 반코드" maxlength="6">
+                <input type="text" id="classCodeInput" placeholder="4자리 반코드" maxlength="4">
                 <input type="text" id="studentNameInput" placeholder="이름">
                 <button id="guestJoinBtn">입장하기</button>
                 <button class="guest-back-btn" id="guestBackBtn">돌아가기</button>
@@ -1978,8 +1978,8 @@
                 return;
             }
 
-            if (classCode.length !== 6 || isNaN(classCode)) {
-                alert('6자리 숫자 반코드를 입력하세요');
+            if (classCode.length !== 4 || isNaN(classCode)) {
+                alert('4자리 숫자 반코드를 입력하세요');
                 return;
             }
 
@@ -2772,7 +2772,7 @@
                 let classCode;
                 let cAttempts = 0;
                 do {
-                    classCode = String(Math.floor(Math.random() * 900000) + 100000);
+                    classCode = String(Math.floor(Math.random() * 9000) + 1000);
                     const existingDoc = await db.collection('rooms').doc(classCode).get();
                     if (!existingDoc.exists) break;
                     cAttempts++;
@@ -3059,7 +3059,7 @@
                     let roomRef;
                     let attempts = 0;
                     do {
-                        roomCode = String(Math.floor(Math.random() * 900000) + 100000);
+                        roomCode = String(Math.floor(Math.random() * 9000) + 1000);
                         roomRef = db.collection('rooms').doc(roomCode);
                         const existing = await roomRef.get();
                         if (!existing.exists) break;
@@ -3728,9 +3728,9 @@
                     input.value = '-' + input.value;
                 }
             } else {
-                // 숫자 추가 (최대 6자리)
+                // 숫자 추가 (최대 4자리)
                 const currentVal = input.value;
-                if (currentVal.replace('-', '').length >= 6) return;
+                if (currentVal.replace('-', '').length >= 4) return;
                 input.value = currentVal + char;
             }
             // 입력 시 살짝 반짝임
