@@ -1430,6 +1430,27 @@
                             <input type="text" id="classNameInput" placeholder="예: 5학년 1반">
                         </div>
                         <div class="form-group">
+                            <label>학년 선택</label>
+                            <div class="radio-group">
+                                <div class="radio-item">
+                                    <input type="radio" id="grade1" name="gradeLevel" value="1" checked>
+                                    <label for="grade1">1학년</label>
+                                </div>
+                                <div class="radio-item">
+                                    <input type="radio" id="grade2" name="gradeLevel" value="2">
+                                    <label for="grade2">2학년</label>
+                                </div>
+                                <div class="radio-item">
+                                    <input type="radio" id="grade3" name="gradeLevel" value="3">
+                                    <label for="grade3">3학년</label>
+                                </div>
+                                <div class="radio-item">
+                                    <input type="radio" id="grade4" name="gradeLevel" value="4">
+                                    <label for="grade4">4학년</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label>연산 선택 (최소 1개)</label>
                             <div class="checkbox-group">
                                 <div class="checkbox-item">
@@ -1599,6 +1620,9 @@
                 <div class="boss-info" id="bossHealth">🐉🐉🐉🐉🐉</div>
             </div>
 
+            <div style="text-align:center;padding:2px 0;">
+                <span id="difficultyDisplay" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:2px 12px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:1px;">Lv.1</span>
+            </div>
             <div class="question-area">
                 <div class="question-text" id="questionText">7 - 3</div>
                 <div class="answer-display-row">
@@ -1716,6 +1740,7 @@
         let currentPeerId = null;
 
         let selectedOperations = ['+', '-']; // Global operations array
+        let currentGradeLevel = 1; // 학년별 난이도 (1~4학년)
         let isPrivateRoom = false; // 비공개 방 여부
         let roomTTLTimer = null; // 방 자동 삭제 타이머
         const ROOM_TTL_MS = 5 * 60 * 1000; // 5분 (밀리초)
@@ -1906,6 +1931,7 @@
                     selectedProfileChar = gs.char || '';
                     currentRoom = gs.classCode;
                     selectedOperations = gs.operations || ['+','-'];
+                    currentGradeLevel = gs.gradeLevel || 1;
                     // Restore guest view
                     loadingScreen.style.display = 'none';
                     loginScreen.style.display = 'none';
@@ -2019,6 +2045,7 @@
                 currentRoom = classCode;
                 gameState.mode = roomData.gameMode || 'speed';
                 selectedOperations = roomData.operations || ['+','-'];
+                currentGradeLevel = roomData.gradeLevel || 1;
                 gameState.isHost = false;
                 gameState.isReady = false;
 
@@ -2037,7 +2064,8 @@
                     uid: gameState.guestUid,
                     char: gameState.guestChar,
                     classCode: classCode,
-                    operations: roomData.operations || ['+','-']
+                    operations: roomData.operations || ['+','-'],
+                    gradeLevel: roomData.gradeLevel || 1
                 }));
 
                 // Show student dashboard with class ranking
@@ -2192,7 +2220,7 @@
                                 <span style="font-size:12px;background:#EDE7FF;color:#5C4B99;padding:3px 8px;border-radius:8px;font-weight:700;">${modeIcon} ${modeName}</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#666;">
-                                <span>연산: ${ops}</span>
+                                <span>${c.gradeLevel||1}학년 · 연산: ${ops}</span>
                                 <span>👦 ${studentCount}/40명</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
@@ -2311,7 +2339,7 @@
             viewDiv.innerHTML = `
                 <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center;">
                     <div style="font-size:20px;font-weight:900;">${escapeHtml(roomData.className||'')}</div>
-                    <div style="font-size:13px;opacity:0.7;margin-top:4px;">${modeIcon} ${modeName} · ${(roomData.operations||[]).join(' ')}</div>
+                    <div style="font-size:13px;opacity:0.7;margin-top:4px;">${roomData.gradeLevel||1}학년 · ${modeIcon} ${modeName} · ${(roomData.operations||[]).join(' ')}</div>
                 </div>
                 <div style="margin-bottom:12px;">
                     <div style="font-weight:900;font-size:15px;margin-bottom:8px;color:#333;">🏠 개설된 대전방</div>
@@ -2561,6 +2589,7 @@
 
                 gameState.mode = room.gameMode || 'survival';
                 selectedOperations = room.operations || ['+','-'];
+                currentGradeLevel = room.gradeLevel || 1;
                 gameState.isHost = false;
                 gameState.selectedChar = gameState.guestChar || selectedProfileChar || characters[Math.floor(Math.random() * characters.length)];
                 currentRoom = roomId;
@@ -2742,6 +2771,32 @@
             createClassBtn.style.display = 'none';
         });
 
+        // 학년 선택 시 연산 체크박스 자동 조정
+        document.querySelectorAll('input[name="gradeLevel"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const grade = parseInt(e.target.value);
+                const opAdd = document.getElementById('opAdd');
+                const opSub = document.getElementById('opSub');
+                const opMul = document.getElementById('opMul');
+                const opDiv = document.getElementById('opDiv');
+                if (grade <= 2) {
+                    // 1~2학년: 덧셈, 뺄셈만 (곱셈/나눗셈 비활성)
+                    opAdd.checked = true; opSub.checked = true;
+                    opMul.checked = false; opDiv.checked = false;
+                    opMul.disabled = true; opDiv.disabled = true;
+                    opMul.parentElement.style.opacity = '0.4';
+                    opDiv.parentElement.style.opacity = '0.4';
+                } else {
+                    // 3~4학년: 모두 선택 가능
+                    opMul.disabled = false; opDiv.disabled = false;
+                    opMul.parentElement.style.opacity = '1';
+                    opDiv.parentElement.style.opacity = '1';
+                    opAdd.checked = true; opSub.checked = true;
+                    opMul.checked = true; opDiv.checked = true;
+                }
+            });
+        });
+
         createClassCancelBtn.addEventListener('click', () => {
             document.getElementById('classCreationForm').classList.remove('active');
             createClassBtn.style.display = 'block';
@@ -2766,9 +2821,10 @@
             }
 
             const mode = document.querySelector('input[name="gameMode"]:checked').value;
+            const gradeLevel = parseInt(document.querySelector('input[name="gradeLevel"]:checked').value);
 
             try {
-                // Generate 6-digit class code with collision check
+                // Generate 4-digit class code with collision check
                 let classCode;
                 let cAttempts = 0;
                 do {
@@ -2786,6 +2842,7 @@
                     classCode: classCode,
                     className: className,
                     operations: operations,
+                    gradeLevel: gradeLevel,
                     gameMode: mode,
                     hostUid: currentUser.uid,
                     hostName: currentUser.displayName || 'Teacher',
@@ -2804,10 +2861,15 @@
 
                 // Reset form
                 document.getElementById('classNameInput').value = '';
+                document.getElementById('grade1').checked = true;
                 document.getElementById('opAdd').checked = true;
                 document.getElementById('opSub').checked = true;
                 document.getElementById('opMul').checked = true;
                 document.getElementById('opDiv').checked = true;
+                document.getElementById('opMul').disabled = false;
+                document.getElementById('opDiv').disabled = false;
+                document.getElementById('opMul').parentElement.style.opacity = '1';
+                document.getElementById('opDiv').parentElement.style.opacity = '1';
                 document.getElementById('modeSpeed').checked = true;
             } catch (error) {
                 alert('반 개설 실패: ' + error.message);
@@ -2858,6 +2920,7 @@
                 // 방 설정 적용
                 gameState.mode = room.gameMode || 'survival';
                 selectedOperations = room.operations || ['+', '-'];
+                currentGradeLevel = room.gradeLevel || 1;
 
                 // joinBattleRoom 호출
                 await joinBattleRoom(code);
@@ -2917,6 +2980,7 @@
                 if (room.hostUid === myUid) { alert('자기 자신의 방에는 입장할 수 없습니다.'); return; }
                 gameState.mode = room.gameMode || 'survival';
                 selectedOperations = room.operations || ['+', '-'];
+                currentGradeLevel = room.gradeLevel || 1;
                 await joinBattleRoom(code);
                 if (input) input.value = '';
             } catch (error) {
@@ -2950,6 +3014,7 @@
 
                 gameState.mode = room.gameMode || 'survival';
                 selectedOperations = room.operations || ['+', '-'];
+                currentGradeLevel = room.gradeLevel || 1;
                 await joinBattleRoom(code);
                 if (input) input.value = '';
             } catch (error) {
@@ -2967,6 +3032,7 @@
                 if (doc.exists) {
                     const data = doc.data();
                     selectedOperations = data.operations || ['+','-'];
+                    currentGradeLevel = data.gradeLevel || 1;
                 }
                 enterRoomSetup();
             }).catch(() => {
@@ -3213,6 +3279,7 @@
             gameState.hostChar = roomData.hostChar;
             gameState.mode = roomData.gameMode || 'speed';
             selectedOperations = roomData.operations || ['+','-'];
+            currentGradeLevel = roomData.gradeLevel || 1;
             gameState.isHost = false;
 
             const myName = gameState.guestName || (currentUser ? currentUser.displayName : 'Player');
@@ -3484,6 +3551,18 @@
             gameState.myCorrectInLevel = 0; // 난이도 상승 카운터
             gameState.bossHealth = 5;
 
+            // ═══ 시드 기반 동기화 초기화 ═══
+            sharedQuestionIndex = 0;
+            if (gameState.isHost) {
+                // 호스트가 시드 생성 후 상대에게 전송
+                sharedGameSeed = Math.floor(Math.random() * 2147483647) + 1;
+                // 약간의 딜레이 후 전송 (연결 안정화)
+                setTimeout(() => {
+                    sendPeerMessage({ type: 'GAME_SEED', seed: sharedGameSeed });
+                }, 200);
+            }
+            // 게스트는 이미 GAME_SEED 메시지로 시드를 받음
+
             if (gameState.mode === 'boss') {
                 document.getElementById('bossHealthContainer').style.display = 'block';
                 updateBossHealthDisplay();
@@ -3561,13 +3640,27 @@
 
         // Handle Peer Message
         function handlePeerMessage(data) {
-            if (data.type === 'CORRECT') {
-                handleOpponentCorrect();
+            if (data.type === 'GAME_SEED') {
+                // 호스트로부터 시드 수신 (게스트만)
+                sharedGameSeed = data.seed;
+                sharedQuestionIndex = 0;
+                console.log('Received game seed:', sharedGameSeed);
+            } else if (data.type === 'CORRECT') {
+                handleOpponentCorrect(data.questionIndex);
             } else if (data.type === 'INCORRECT') {
                 handleOpponentIncorrect();
+            } else if (data.type === 'TIMEOUT') {
+                // 상대 타임아웃 - 상대 생명 감소
+                handleOpponentIncorrect();
+            } else if (data.type === 'NEXT_QUESTION') {
+                // 상대가 타임아웃으로 다음 문제 요청 → 동기화
+                if (data.questionIndex !== undefined && data.questionIndex > sharedQuestionIndex) {
+                    sharedQuestionIndex = data.questionIndex;
+                    generateQuestion();
+                    startQuestionTimer();
+                }
             } else if (data.type === 'SYNC_QUESTION') {
-                // v10.9: 각자 독립 문제 — 상대 문제 무시 (하위 호환용 유지)
-                // 이전 버전 클라이언트가 보낸 SYNC_QUESTION은 무시
+                // 하위 호환용 유지
             } else if (data.type === 'GAME_END') {
                 // Opponent sent GAME_END - reverse the result for me
                 const myResult = data.result === 'win' ? 'lose' : data.result === 'lose' ? 'win' : 'draw';
@@ -3598,111 +3691,114 @@
             }
         }
 
-        // Shared question seed for P2P sync
-        let sharedQuestionSeed = null;
+        // ═══ 시드 기반 난수 생성기 (mulberry32) ═══
+        // 양쪽 플레이어가 동일한 문제를 받기 위해 시드 기반 PRNG 사용
+        let sharedGameSeed = null;       // 게임 시작 시 공유되는 시드
+        let sharedQuestionIndex = 0;     // 현재 문제 번호 (양쪽 동기화)
 
-        // Generate Question - MULTI-OPERATION
-        function generateQuestion(seedFromPeer) {
-            const operation = selectedOperations[Math.floor(Math.random() * selectedOperations.length)];
-            const diff = gameState.difficulty || 1;
+        function mulberry32(seed) {
+            let t = seed + 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+
+        // 시드 + 문제번호 + 호출순서로 결정적 난수 생성
+        function seededRandom(questionIdx, callIdx) {
+            const combinedSeed = (sharedGameSeed || 12345) * 2654435761 + questionIdx * 65537 + callIdx * 97;
+            return mulberry32(combinedSeed & 0xFFFFFFFF);
+        }
+
+        function seededRandInt(questionIdx, callIdx, range) {
+            return Math.floor(seededRandom(questionIdx, callIdx) * range);
+        }
+
+        // 문제 번호에 따른 난이도 계산 (점진적 상승)
+        // 1~3번: 난이도 1, 4~6번: 난이도 2, 7~9번: 난이도 3, ...최대 8
+        function getDifficultyByQuestionIndex(qIdx) {
+            return Math.min(8, Math.floor(qIdx / 3) + 1);
+        }
+
+        // Generate Question - 시드 기반 동기화 + 학년별 난이도
+        // 양쪽 플레이어가 동일한 sharedGameSeed + sharedQuestionIndex로 같은 문제 생성
+        function generateQuestion() {
+            const qIdx = sharedQuestionIndex;
+            let callCounter = 0; // 각 난수 호출마다 증가
+
+            // 연산 선택도 시드 기반
+            const opIndex = seededRandInt(qIdx, callCounter++, selectedOperations.length);
+            const operation = selectedOperations[opIndex];
+            const grade = currentGradeLevel || 1;
+            const adaptDiff = getDifficultyByQuestionIndex(qIdx); // 문제 번호 기반 난이도
             let a, b, answer, question;
 
+            // 시드 기반 난수 헬퍼
+            const rand = (range) => seededRandInt(qIdx, callCounter++, range);
+
             if (operation === '+') {
-                // Addition
-                if (diff <= 1) {
-                    a = Math.floor(Math.random() * 8) + 2;
-                    b = Math.floor(Math.random() * 8) + 2;
-                } else if (diff <= 3) {
-                    a = Math.floor(Math.random() * 50) + 10;
-                    b = Math.floor(Math.random() * 50) + 10;
-                } else if (diff <= 5) {
-                    a = Math.floor(Math.random() * 300) + 50;
-                    b = Math.floor(Math.random() * 300) + 50;
+                if (grade === 1) {
+                    if (adaptDiff <= 2) { a = rand(8) + 1; b = rand(8) + 1; }
+                    else if (adaptDiff <= 4) { a = rand(5) + 5; b = rand(5) + 5; }
+                    else { a = rand(9) + 1; b = rand(Math.max(1, 19 - a)) + 1; }
+                } else if (grade === 2) {
+                    if (adaptDiff <= 2) { a = rand(40) + 10; b = rand(9) + 1; }
+                    else if (adaptDiff <= 4) { a = rand(50) + 10; b = rand(40) + 10; }
+                    else { a = rand(60) + 30; b = rand(60) + 30; }
+                } else if (grade === 3) {
+                    if (adaptDiff <= 2) { a = rand(200) + 100; b = rand(200) + 100; }
+                    else if (adaptDiff <= 4) { a = rand(400) + 200; b = rand(400) + 200; }
+                    else { a = rand(500) + 400; b = rand(500) + 400; }
                 } else {
-                    a = Math.floor(Math.random() * 800) + 100;
-                    b = Math.floor(Math.random() * 800) + 100;
+                    if (adaptDiff <= 2) { a = rand(4000) + 1000; b = rand(4000) + 1000; }
+                    else if (adaptDiff <= 4) { a = rand(8000) + 2000; b = rand(8000) + 2000; }
+                    else { a = rand(50000) + 10000; b = rand(50000) + 10000; }
                 }
                 answer = a + b;
                 question = `${a} + ${b}`;
             } else if (operation === '-') {
-                // Subtraction (v6.4 logic)
-                if (diff <= 1) {
-                    a = Math.floor(Math.random() * 8) + 2;
-                    b = Math.floor(Math.random() * a) + 1;
-                } else if (diff === 2) {
-                    const tens = Math.floor(Math.random() * 9) + 1;
-                    const ones = Math.floor(Math.random() * 8) + 2;
-                    a = tens * 10 + ones;
-                    b = Math.floor(Math.random() * ones) + 1;
-                } else if (diff === 3) {
-                    const tens = Math.floor(Math.random() * 8) + 2;
-                    const ones = Math.floor(Math.random() * 5);
-                    a = tens * 10 + ones;
-                    b = ones + Math.floor(Math.random() * (9 - ones)) + 1;
-                    if (b > 9) b = 9;
-                } else if (diff === 4) {
-                    const t1 = Math.floor(Math.random() * 7) + 3;
-                    const o1 = Math.floor(Math.random() * 7) + 2;
-                    a = t1 * 10 + o1;
-                    const t2 = Math.floor(Math.random() * t1) + 1;
-                    const o2 = Math.floor(Math.random() * o1) + 1;
-                    b = t2 * 10 + o2;
-                } else if (diff === 5) {
-                    a = Math.floor(Math.random() * 50) + 40;
-                    b = Math.floor(Math.random() * 30) + 11;
-                    if (b >= a) b = a - Math.floor(Math.random() * 10) - 1;
-                    if (b < 10) b = 10 + Math.floor(Math.random() * 10);
-                } else if (diff === 6) {
-                    a = Math.floor(Math.random() * 400) + 200;
-                    b = Math.floor(Math.random() * 40) + 11;
-                    if ((a % 10) < (b % 10)) a = a - (a % 10) + (b % 10) + Math.floor(Math.random() * 3);
-                } else if (diff === 7) {
-                    a = Math.floor(Math.random() * 400) + 300;
-                    b = Math.floor(Math.random() * 60) + 30;
+                if (grade === 1) {
+                    if (adaptDiff <= 2) { a = rand(8) + 2; b = rand(Math.max(1, a)) + 1; }
+                    else if (adaptDiff <= 4) { a = rand(10) + 9; b = rand(8) + 1; }
+                    else { a = rand(10) + 10; b = rand(9) + 1; }
+                } else if (grade === 2) {
+                    if (adaptDiff <= 2) { a = rand(40) + 11; b = rand(9) + 1; }
+                    else if (adaptDiff <= 4) { a = rand(50) + 30; b = rand(20) + 10; }
+                    else { a = rand(50) + 40; b = rand(30) + 11; }
+                } else if (grade === 3) {
+                    if (adaptDiff <= 2) { a = rand(300) + 200; b = rand(100) + 100; }
+                    else if (adaptDiff <= 4) { a = rand(400) + 400; b = rand(300) + 100; }
+                    else { a = rand(500) + 500; b = rand(400) + 100; }
                 } else {
-                    a = Math.floor(Math.random() * 500) + 400;
-                    b = Math.floor(Math.random() * 300) + 100;
-                    if (b >= a) b = a - Math.floor(Math.random() * 50) - 10;
+                    if (adaptDiff <= 2) { a = rand(5000) + 2000; b = rand(2000) + 1000; }
+                    else if (adaptDiff <= 4) { a = rand(8000) + 5000; b = rand(4000) + 1000; }
+                    else { a = rand(50000) + 20000; b = rand(20000) + 1000; }
                 }
-                if (a <= b) { a = b + Math.floor(Math.random() * 5) + 1; }
+                if (a <= b) { a = b + rand(5) + 1; }
                 answer = a - b;
                 question = `${a} - ${b}`;
             } else if (operation === '×') {
-                // Multiplication
-                if (diff <= 2) {
-                    a = Math.floor(Math.random() * 8) + 2;
-                    b = Math.floor(Math.random() * 8) + 2;
-                } else if (diff <= 4) {
-                    a = Math.floor(Math.random() * 15) + 2;
-                    b = Math.floor(Math.random() * 15) + 2;
-                } else if (diff <= 6) {
-                    a = Math.floor(Math.random() * 50) + 10;
-                    b = Math.floor(Math.random() * 50) + 10;
+                if (grade === 3) {
+                    if (adaptDiff <= 2) { a = rand(8) + 2; b = rand(8) + 2; }
+                    else if (adaptDiff <= 4) { a = rand(20) + 10; b = rand(8) + 2; }
+                    else { a = rand(30) + 10; b = rand(9) + 2; }
                 } else {
-                    a = Math.floor(Math.random() * 100) + 50;
-                    b = Math.floor(Math.random() * 100) + 50;
+                    if (adaptDiff <= 2) { a = rand(15) + 2; b = rand(15) + 2; }
+                    else if (adaptDiff <= 4) { a = rand(30) + 10; b = rand(20) + 10; }
+                    else { a = rand(50) + 20; b = rand(50) + 20; }
                 }
                 answer = a * b;
                 question = `${a} × ${b}`;
             } else if (operation === '÷') {
-                // Division - always whole number
-                if (diff <= 2) {
-                    b = Math.floor(Math.random() * 8) + 2;
-                    answer = Math.floor(Math.random() * 8) + 2;
-                    a = answer * b;
-                } else if (diff <= 4) {
-                    b = Math.floor(Math.random() * 15) + 2;
-                    answer = Math.floor(Math.random() * 15) + 2;
-                    a = answer * b;
-                } else if (diff <= 6) {
-                    b = Math.floor(Math.random() * 50) + 10;
-                    answer = Math.floor(Math.random() * 50) + 10;
-                    a = answer * b;
+                if (grade === 3) {
+                    if (adaptDiff <= 2) { b = rand(7) + 2; answer = rand(7) + 2; }
+                    else if (adaptDiff <= 4) { b = rand(8) + 2; answer = rand(10) + 2; }
+                    else { b = rand(9) + 2; answer = rand(15) + 5; }
                 } else {
-                    b = Math.floor(Math.random() * 100) + 50;
-                    answer = Math.floor(Math.random() * 100) + 50;
-                    a = answer * b;
+                    if (adaptDiff <= 2) { b = rand(8) + 2; answer = rand(10) + 2; }
+                    else if (adaptDiff <= 4) { b = rand(15) + 2; answer = rand(15) + 2; }
+                    else { b = rand(20) + 10; answer = rand(20) + 5; }
                 }
+                a = answer * b;
                 question = `${a} ÷ ${b}`;
             }
 
@@ -3710,6 +3806,10 @@
                 question: question,
                 answer: String(Math.floor(answer))
             };
+
+            // 난이도 레벨 표시 업데이트
+            const diffDisplay = document.getElementById('difficultyDisplay');
+            if (diffDisplay) diffDisplay.textContent = `Lv.${adaptDiff}`;
 
             questionText.textContent = gameState.currentQuestion.question;
             answerInput.value = '';
@@ -3728,9 +3828,9 @@
                     input.value = '-' + input.value;
                 }
             } else {
-                // 숫자 추가 (최대 4자리)
+                // 숫자 추가 (최대 6자리 - 4학년 큰 수 대응)
                 const currentVal = input.value;
-                if (currentVal.replace('-', '').length >= 4) return;
+                if (currentVal.replace('-', '').length >= 6) return;
                 input.value = currentVal + char;
             }
             // 입력 시 살짝 반짝임
@@ -4010,7 +4110,6 @@
         function handleCorrectAnswer() {
             gameState.myScore++;
             gameState.myStreak++;
-            gameState.myCorrectInLevel = (gameState.myCorrectInLevel || 0) + 1;
             showCorrectEffect();
             // 입력 필드 시각 피드백
             answerInput.classList.add('answer-correct');
@@ -4021,13 +4120,6 @@
                 gameState.myHealth++;
                 playSound(1600, 150);
                 showLifeBonusMessage();
-            }
-
-            // ═══ 개인별 적응형 난이도 ═══
-            // 5문제 연속 정답 시 난이도 상승, 오답 시 난이도 유지
-            if (gameState.myCorrectInLevel >= 5) {
-                gameState.difficulty = Math.min(8, (gameState.difficulty || 1) + 1);
-                gameState.myCorrectInLevel = 0; // 카운터 리셋
             }
 
             // Opponent loses 1 life
@@ -4050,20 +4142,20 @@
                 return;
             }
 
-            // ═══ 각자 독립 문제: 상대에게 정답 알림만 전송 (문제 동기화 X) ═══
-            sendPeerMessage({ type: 'CORRECT' });
-            generateQuestion(); // 내 난이도에 맞는 새 문제
+            // ═══ 양쪽 동일 문제: 정답 시 문제 번호 증가 → 양쪽 새 문제 ═══
+            sharedQuestionIndex++;
+            sendPeerMessage({ type: 'CORRECT', questionIndex: sharedQuestionIndex });
+            generateQuestion(); // 시드 기반으로 양쪽 동일 문제 생성
             startQuestionTimer();
         }
 
-        // Incorrect Answer
+        // Incorrect Answer - 오답 시 같은 문제 유지, 생명만 감소
         function handleIncorrectAnswer() {
             showIncorrectEffect();
             // 입력 필드 시각 피드백
             answerInput.classList.add('answer-wrong');
             setTimeout(() => answerInput.classList.remove('answer-wrong'), 400);
             gameState.myStreak = 0;
-            gameState.myCorrectInLevel = 0; // 오답 시 난이도 상승 카운터 리셋 (난이도 유지)
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
 
@@ -4076,14 +4168,15 @@
 
             answerInput.value = '';
             answerInput.focus();
-            // Don't restart timer on wrong answer - keep existing timer running
+            // 오답 시 같은 문제 유지 - 타이머도 유지
         }
 
-        // Opponent Correct
-        function handleOpponentCorrect() {
+        // Opponent Correct - 상대가 먼저 정답 → 양쪽 다음 문제로 이동
+        function handleOpponentCorrect(peerQuestionIndex) {
             gameState.opponentScore++;
             document.getElementById('player2Score').textContent = gameState.opponentScore;
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
+            gameState.myStreak = 0; // 상대가 먼저 맞추면 내 연속 기록 리셋
             updateHealthDisplay();
 
             if (gameState.mode === 'boss') {
@@ -4095,6 +4188,15 @@
                 endGame('lose');
                 return;
             }
+
+            // ═══ 상대가 정답 → 양쪽 동일하게 다음 문제로 ═══
+            if (peerQuestionIndex !== undefined) {
+                sharedQuestionIndex = peerQuestionIndex;
+            } else {
+                sharedQuestionIndex++;
+            }
+            generateQuestion(); // 동일 시드로 같은 문제 생성
+            startQuestionTimer();
         }
 
         // Opponent Incorrect
@@ -4157,18 +4259,20 @@
             if (!gameState.gameActive) return; // Prevent double timeout
             playSound(300, 200);
             gameState.myStreak = 0;
-            gameState.myCorrectInLevel = 0; // 타임아웃 시 난이도 카운터 리셋
             gameState.myHealth = Math.max(0, gameState.myHealth - 1);
             updateHealthDisplay();
 
-            sendPeerMessage({ type: 'INCORRECT' });
+            sendPeerMessage({ type: 'TIMEOUT' });
 
             if (gameState.myHealth <= 0) {
                 endGame('lose');
                 return;
             }
 
-            generateQuestion(); // 내 난이도에 맞는 독립 문제
+            // 타임아웃 시에도 다음 문제로 (양쪽 동기화)
+            sharedQuestionIndex++;
+            sendPeerMessage({ type: 'NEXT_QUESTION', questionIndex: sharedQuestionIndex });
+            generateQuestion();
             startQuestionTimer();
         }
 
@@ -4349,6 +4453,8 @@
             gameEnded = false;
             countdownStarted = false;
             readyInProgress = false;
+            sharedGameSeed = null;
+            sharedQuestionIndex = 0;
 
             // 타이머 정리
             if (questionTimerInterval) {
